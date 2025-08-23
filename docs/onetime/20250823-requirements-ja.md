@@ -37,13 +37,69 @@
 
 ---
 
-## MCPツール（APIサーフェスの名前のみ）
+## MCPツール（APIサーフェス）
 - `list_channels` — List channels in the workspace with pagination
 - `get_channel_history` — Get recent messages from a channel
 - `get_thread_replies` — Get all replies in a message thread
 - `search_messages` — Search for messages in the workspace with powerful filters
 
-※ 入力・出力の詳細は**TBD**。後で詰める。
+### search_messages スキーマ詳細
+
+#### 入力パラメータ
+```json
+{
+  "query": "string (optional)",        // 基本検索クエリ（修飾子なし）
+  "in_channel": "string (optional)",   // チャンネルID（例: "C1234567"）
+  "from_user": "string (optional)",    // ユーザーID（例: "U1234567"）
+  "before": "string (optional)",       // YYYY-MM-DD形式
+  "after": "string (optional)",        // YYYY-MM-DD形式  
+  "on": "string (optional)",           // YYYY-MM-DD形式
+  "during": "string (optional)",       // 期間指定（例: "July", "2023", "last week"）
+  "highlight": "boolean (optional)",   // 検索結果のハイライト（デフォルト: false）
+  "sort": "string (optional)",         // ソート方法: "score" | "timestamp"（デフォルト: "score"）
+  "sort_dir": "string (optional)",     // ソート順: "asc" | "desc"（デフォルト: "desc"）
+  "count": "number (optional)",        // ページあたりの結果数（1-100、デフォルト: 20）
+  "page": "number (optional)"          // ページ番号（1-100、デフォルト: 1）
+}
+```
+
+#### 出力形式
+```json
+{
+  "ok": true,
+  "messages": {
+    "matches": [
+      {
+        "type": "message",
+        "user": "U1234567",
+        "text": "メッセージ本文",
+        "ts": "1234567890.123456",
+        "channel": {
+          "id": "C1234567",
+          "name": "channel-name"
+        },
+        "permalink": "https://workspace.slack.com/archives/..."
+      }
+    ],
+    "pagination": {
+      "total_count": 100,
+      "page": 1,
+      "page_count": 5,
+      "per_page": 20,
+      "first": 1,
+      "last": 5
+    }
+  }
+}
+```
+
+#### 実装上の注意点
+- `query`フィールドには修飾子（from:, in:等）を含めない
+- チャンネル指定は`in_channel`でチャンネルIDを受け取り、内部でチャンネル名に変換してSlack APIに渡す
+- ユーザー指定は`from_user`でユーザーIDを受け取り、`<@USER_ID>`形式でクエリに追加
+- User Token（xoxp）を使用し、`search.messages` APIを呼び出す
+
+※ 他のツールの入力・出力詳細は後続実装時に定義
 
 ---
 
