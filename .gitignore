@@ -24,3 +24,5 @@
 go.work
 
 slack-explorer-mcp
+
+.claude/settings.local.json
