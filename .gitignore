@@ -24,5 +24,6 @@
 go.work
 
 slack-explorer-mcp
+slack-explorer-mcp.code-workspace
 
 .claude/settings.local.json
