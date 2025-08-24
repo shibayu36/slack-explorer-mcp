@@ -245,3 +245,132 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_buildThreadRepliesParams(t *testing.T) {
+	handler := &Handler{}
+
+	t.Run("required parameters only", func(t *testing.T) {
+		request := buildThreadRepliesRequest{
+			ChannelID: "C1234567",
+			ThreadTS:  "1234567890.123456",
+			Limit:     100,
+		}
+
+		params, err := handler.buildThreadRepliesParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     100,
+		}, params)
+	})
+
+	t.Run("all parameters specified", func(t *testing.T) {
+		request := buildThreadRepliesRequest{
+			ChannelID: "C1234567",
+			ThreadTS:  "1234567890.123456",
+			Limit:     50,
+			Cursor:    "dXNlcjpVMDYxTkZUVDI=",
+		}
+
+		params, err := handler.buildThreadRepliesParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     50,
+			Cursor:    "dXNlcjpVMDYxTkZUVDI=",
+		}, params)
+	})
+
+	t.Run("channel_id validation errors", func(t *testing.T) {
+		testCases := []struct {
+			name      string
+			request   buildThreadRepliesRequest
+			expectErr string
+		}{
+			{
+				"empty channel_id",
+				buildThreadRepliesRequest{ChannelID: "", ThreadTS: "1234567890.123456", Limit: 100},
+				"channel_id is required",
+			},
+			{
+				"invalid channel_id format",
+				buildThreadRepliesRequest{ChannelID: "invalid123", ThreadTS: "1234567890.123456", Limit: 100},
+				"invalid channel ID format. Must start with 'C' (e.g., 'C1234567')",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := handler.buildThreadRepliesParams(tc.request)
+
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectErr, err.Error())
+			})
+		}
+	})
+
+	t.Run("thread_ts validation errors", func(t *testing.T) {
+		testCases := []struct {
+			name      string
+			request   buildThreadRepliesRequest
+			expectErr string
+		}{
+			{
+				"empty thread_ts",
+				buildThreadRepliesRequest{ChannelID: "C1234567", ThreadTS: "", Limit: 100},
+				"thread_ts is required",
+			},
+			{
+				"invalid thread_ts format - missing dot",
+				buildThreadRepliesRequest{ChannelID: "C1234567", ThreadTS: "1234567890123456", Limit: 100},
+				"thread_ts must be in format '1234567890.123456'",
+			},
+			{
+				"invalid thread_ts format - wrong digits",
+				buildThreadRepliesRequest{ChannelID: "C1234567", ThreadTS: "123456789.12345", Limit: 100},
+				"thread_ts must be in format '1234567890.123456'",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := handler.buildThreadRepliesParams(tc.request)
+
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectErr, err.Error())
+			})
+		}
+	})
+
+	t.Run("limit validation errors", func(t *testing.T) {
+		testCases := []struct {
+			name      string
+			request   buildThreadRepliesRequest
+			expectErr string
+		}{
+			{
+				"limit too low",
+				buildThreadRepliesRequest{ChannelID: "C1234567", ThreadTS: "1234567890.123456", Limit: 0},
+				"limit must be between 1 and 1000, got 0",
+			},
+			{
+				"limit too high",
+				buildThreadRepliesRequest{ChannelID: "C1234567", ThreadTS: "1234567890.123456", Limit: 1001},
+				"limit must be between 1 and 1000, got 1001",
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := handler.buildThreadRepliesParams(tc.request)
+
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectErr, err.Error())
+			})
+		}
+	})
+}

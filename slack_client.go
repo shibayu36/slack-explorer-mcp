@@ -9,6 +9,7 @@ import (
 // SlackClient is an interface for Slack API operations
 type SlackClient interface {
 	SearchMessages(query string, params slack.SearchParameters) (*slack.SearchMessages, error)
+	GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error)
 }
 
 type slackClient struct {
@@ -31,6 +32,15 @@ func (c *slackClient) SearchMessages(query string, params slack.SearchParameters
 	return messages, nil
 }
 
+// GetConversationReplies retrieves replies to a message thread
+func (c *slackClient) GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error) {
+	messages, hasMore, nextCursor, err := c.client.GetConversationReplies(params)
+	if err != nil {
+		return nil, false, "", c.mapError(err)
+	}
+	return messages, hasMore, nextCursor, nil
+}
+
 func (c *slackClient) mapError(err error) error {
 	if rateLimitErr, ok := err.(*slack.RateLimitedError); ok {
 		return fmt.Errorf("rate limited: retry after %d seconds", rateLimitErr.RetryAfter)
@@ -46,6 +56,8 @@ func (c *slackClient) mapError(err error) error {
 			return fmt.Errorf("channel not found: %s", slackErr.Err)
 		case "user_not_found":
 			return fmt.Errorf("user not found: %s", slackErr.Err)
+		case "thread_not_found":
+			return fmt.Errorf("thread not found: %s", slackErr.Err)
 		default:
 			return fmt.Errorf("slack API error: %s", slackErr.Err)
 		}
