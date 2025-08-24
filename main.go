@@ -8,7 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-const Version = "0.2.0"
+const Version = "0.2.1"
 
 func main() {
 	// Initialize handler
