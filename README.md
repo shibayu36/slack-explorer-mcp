@@ -27,6 +27,11 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
     - `limit`: Number of replies to retrieve (1-1000, default: 100)
     - `cursor`: Pagination cursor
 
+- User Profiles (`get_user_profiles`)
+  - Get profile information for multiple users in bulk. Retrieve display names, real names, email addresses, and other profile information by specifying a list of user IDs.
+  - Parameters
+    - `user_ids`: Array of user IDs (required, max 100)
+
 ## Setup
 
 ### Getting a Slack User Token
@@ -38,7 +43,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
    - `groups:read`, `groups:history` - For private channels
    - `im:read`, `im:history` - For direct messages
    - `mpim:read`, `mpim:history` - For group direct messages
-   - `users:read` - For user information
+   - `users:read`, `users.profile:read` - For user information and profiles
 3. Install the app to your workspace
 4. Get the User OAuth Token (starts with xoxp-)
 

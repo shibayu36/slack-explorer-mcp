@@ -44,11 +44,16 @@
   - 高度な検索フィルタ（with, has, hasmy）対応
   - ページネーション完全対応
   - エラーハンドリング実装済み
+- **`get_thread_replies`** — Get all replies in a message thread
+  - ページネーション対応
+  - エラーハンドリング実装済み
+- **`get_user_profiles`** — Get multiple users profile information in bulk
+  - バリデーション実装済み（最大100個、UserID形式チェック）
+  - 個別エラーハンドリング実装済み
 
 ### 未実装（🚧）
 - `list_channels` — List channels in the workspace with pagination
 - `get_channel_history` — Get recent messages from a channel
-- `get_thread_replies` — Get all replies in a message thread
 
 ### search_messages スキーマ詳細
 
@@ -157,19 +162,52 @@
 - ページネーションは`cursor`と`limit`で制御
 - `has_more`がtrueの場合、`response_metadata.next_cursor`を次回リクエストの`cursor`に使用
 
+### get_user_profiles スキーマ詳細
+
+#### 入力パラメータ
+```json
+{
+  "user_ids": "array (required)"         // ユーザーID配列（例: ["U1234567", "U2345678"]）最大100個
+}
+```
+
+#### 出力形式
+```json
+[
+  {
+    "user_id": "U1234567",
+    "display_name": "John Doe",
+    "real_name": "John Doe",
+    "email": "john@example.com"
+  },
+  {
+    "user_id": "U2345678",
+    "error": "user_not_found"              // エラーの場合はerrorフィールドのみ
+  }
+]
+```
+
+#### 実装上の注意点
+- `user_ids`は必須パラメータで、最大100個のユーザーIDを受け取る
+- 各ユーザーIDは`U`で始まる形式（例: `U1234567`）である必要がある
+- Slack APIの`users.profile.get`を順次呼び出し、個別のエラーも含めて結果を返す
+- User Token（xoxp）を使用し、`users.profile.get` APIを呼び出す
+- 一部のユーザーでエラーが発生しても、他のユーザーの情報は正常に返す
+- 必要スコープ: `users:read`, `users.profile:read`
+
 ※ 他のツールの入力・出力詳細は後続実装時に定義
 
 ---
 
 ## Slack API依存とスコープ
 - **使用SDK**: `github.com/slack-go/slack` - 導入済み ✅
-- 使用メソッド（想定）：`conversations.list`, `conversations.history`, `conversations.replies`, `users.list`（表示名解決用）, `search.messages`（検索）
-  - **実装済み**: `search.messages` ✅
+- 使用メソッド（想定）：`conversations.list`, `conversations.history`, `conversations.replies`, `users.list`（表示名解決用）, `search.messages`（検索）, `users.profile.get`（プロフィール取得）
+  - **実装済み**: `search.messages`, `conversations.replies`, `users.profile.get` ✅
 - 必要スコープ（User Token想定）
   - 公開：`channels:read`, `channels:history`
   - 非公開：`groups:read`, `groups:history`
   - DM/マルチDM：`im:read`, `im:history`, `mpim:read`, `mpim:history`
-  - ユーザー：`users:read`
+  - ユーザー：`users:read`, `users.profile:read`
   - 検索：`search:read` ✅
 - 注意点
   - プライベート/DMは**ユーザー参加済み**でなければ取得不可
@@ -210,11 +248,18 @@
    - パラメータバリデーション実装
    - Slackエラーマッピング実装
    - ページネーション対応
+2) **`get_thread_replies`** - 完全実装済み
+   - パラメータバリデーション実装
+   - ページネーション対応
+   - エラーハンドリング実装
+3) **`get_user_profiles`** - 完全実装済み
+   - バリデーション実装（最大100個、UserID形式チェック）
+   - 個別エラーハンドリング実装
+   - フラット配列レスポンス形式
 
 ### 未実装（🚧）
-2) `get_thread_replies` - 未実装
-3) `get_channel_history` - 未実装  
-4) `list_channels` - 未実装
+4) `get_channel_history` - 未実装  
+5) `list_channels` - 未実装
 
 ### 技術的進展
 - **認証・エラーハンドリング**: 完了済み
