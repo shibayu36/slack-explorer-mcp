@@ -49,7 +49,7 @@
 ```json
 {
   "query": "string (optional)",        // 基本検索クエリ（修飾子なし）
-  "in_channel": "string (optional)",   // チャンネルID（例: "C1234567"）
+  "in_channel": "string (optional)",   // チャンネル名（例: "general", "random", "チーム-dev"）
   "from_user": "string (optional)",    // ユーザーID（例: "U1234567"）
   "before": "string (optional)",       // YYYY-MM-DD形式
   "after": "string (optional)",        // YYYY-MM-DD形式  
@@ -95,7 +95,7 @@
 
 #### 実装上の注意点
 - `query`フィールドには修飾子（from:, in:等）を含めない
-- チャンネル指定は`in_channel`でチャンネルIDを受け取り、内部でチャンネル名に変換してSlack APIに渡す
+- チャンネル指定は`in_channel`でチャンネル名を受け取り、そのままSlack検索APIに渡す
 - ユーザー指定は`from_user`でユーザーIDを受け取り、`<@USER_ID>`形式でクエリに追加
 - User Token（xoxp）を使用し、`search.messages` APIを呼び出す
 

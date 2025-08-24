@@ -132,10 +132,6 @@ func (h *Handler) validateSearchRequest(req *SearchMessagesRequest) error {
 		}
 	}
 
-	if req.InChannel != "" && !strings.HasPrefix(req.InChannel, "C") {
-		return fmt.Errorf("invalid channel ID format. Must start with 'C' (e.g., 'C1234567')")
-	}
-
 	if req.FromUser != "" && !strings.HasPrefix(req.FromUser, "U") {
 		return fmt.Errorf("invalid user ID format. Must start with 'U' (e.g., 'U1234567')")
 	}

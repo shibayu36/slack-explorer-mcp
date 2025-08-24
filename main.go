@@ -27,7 +27,7 @@ func main() {
 				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', etc. - use the dedicated fields instead."),
 			),
 			mcp.WithString("in_channel",
-				mcp.Description("Search within a specific channel. Must be a Slack channel ID (e.g., 'C1234567'). Use slack_list_channels to find channel IDs first."),
+				mcp.Description("Search within a specific channel. Specify the channel name (e.g., 'general', 'random', 'チーム-dev')."),
 			),
 			mcp.WithString("from_user",
 				mcp.Description("Search for messages from a specific user. Must be a Slack user ID (e.g., 'U1234567'). Use slack_get_users to find user IDs first."),
