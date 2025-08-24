@@ -392,3 +392,18 @@ func (h *Handler) convertToThreadResponse(messages []slack.Message, hasMore bool
 
 	return response
 }
+
+// UserProfile represents a user profile result
+type UserProfile struct {
+	UserID      string `json:"user_id"`
+	DisplayName string `json:"display_name,omitempty"`
+	RealName    string `json:"real_name,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
+// GetUserProfiles handles the get_user_profiles tool call
+func (h *Handler) GetUserProfiles(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// TODO: implement get_user_profiles
+	return mcp.NewToolResultError("get_user_profiles not implemented yet"), nil
+}

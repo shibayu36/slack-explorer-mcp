@@ -109,6 +109,23 @@ func main() {
 		handler.GetThreadReplies,
 	)
 
+	// Add get_user_profiles tool
+	s.AddTool(
+		mcp.NewTool("get_user_profiles",
+			mcp.WithDescription("Get multiple users profile information in bulk"),
+			mcp.WithArray("user_ids",
+				mcp.Required(),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Array of user IDs to retrieve profiles for (e.g., ['U1234567', 'U2345678']). Maximum 100 user IDs."),
+			),
+		),
+		handler.GetUserProfiles,
+	)
+
 	if err := server.ServeStdio(s); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)
