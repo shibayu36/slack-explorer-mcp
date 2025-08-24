@@ -67,6 +67,7 @@ func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolReques
 		Query:     request.GetString("query", ""),
 		InChannel: request.GetString("in_channel", ""),
 		FromUser:  request.GetString("from_user", ""),
+		With:      request.GetStringSlice("with", []string{}),
 		Before:    request.GetString("before", ""),
 		After:     request.GetString("after", ""),
 		On:        request.GetString("on", ""),
@@ -102,6 +103,7 @@ type buildSearchParamsRequest struct {
 	Query     string
 	InChannel string
 	FromUser  string
+	With      []string
 	Before    string
 	After     string
 	On        string
@@ -137,6 +139,15 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 			return "", slack.SearchParameters{}, fmt.Errorf("invalid user ID format. Must start with 'U' (e.g., 'U1234567')")
 		}
 		queryParts = append(queryParts, fmt.Sprintf("from:<@%s>", request.FromUser))
+	}
+
+	for _, with := range request.With {
+		if with != "" {
+			if !strings.HasPrefix(with, "U") {
+				return "", slack.SearchParameters{}, fmt.Errorf("invalid user ID format in with parameter: '%s'. Must start with 'U' (e.g., 'U1234567')", with)
+			}
+			queryParts = append(queryParts, fmt.Sprintf("with:<@%s>", with))
+		}
 	}
 
 	datePattern := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)

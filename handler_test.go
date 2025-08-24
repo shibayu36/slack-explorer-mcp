@@ -38,6 +38,7 @@ func TestHandler_buildSearchParams(t *testing.T) {
 			Query:     "test message",
 			InChannel: "general",
 			FromUser:  "U1234567",
+			With:      []string{"U2345678", "U3456789"},
 			Before:    "2024-01-15",
 			After:     "2024-01-01",
 			On:        "2024-01-10",
@@ -54,7 +55,7 @@ func TestHandler_buildSearchParams(t *testing.T) {
 		query, params, err := handler.buildSearchParams(request)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test message in:general from:<@U1234567> before:2024-01-15 after:2024-01-01 on:2024-01-10 during:January has::eyes: has:pin has:file hasmy::fire: hasmy::thumbsup:", query)
+		assert.Equal(t, "test message in:general from:<@U1234567> with:<@U2345678> with:<@U3456789> before:2024-01-15 after:2024-01-01 on:2024-01-10 during:January has::eyes: has:pin has:file hasmy::fire: hasmy::thumbsup:", query)
 		assert.Equal(t, slack.SearchParameters{
 			Sort:          "timestamp",
 			SortDirection: "asc",
@@ -80,18 +81,31 @@ func TestHandler_buildSearchParams(t *testing.T) {
 	})
 
 	t.Run("invalid user ID format should error", func(t *testing.T) {
-		request := buildSearchParamsRequest{
-			FromUser: "invaliduser",
-			Sort:     "score",
-			SortDir:  "desc",
-			Count:    20,
-			Page:     1,
+		testCases := []struct {
+			name      string
+			request   buildSearchParamsRequest
+			expectErr string
+		}{
+			{
+				"invalid from_user",
+				buildSearchParamsRequest{FromUser: "invaliduser", Sort: "score", SortDir: "desc", Count: 20, Page: 1},
+				"invalid user ID format. Must start with 'U' (e.g., 'U1234567')",
+			},
+			{
+				"invalid with user",
+				buildSearchParamsRequest{With: []string{"U1234567", "invaliduser"}, Sort: "score", SortDir: "desc", Count: 20, Page: 1},
+				"invalid user ID format in with parameter: 'invaliduser'. Must start with 'U' (e.g., 'U1234567')",
+			},
 		}
 
-		_, _, err := handler.buildSearchParams(request)
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				_, _, err := handler.buildSearchParams(tc.request)
 
-		assert.Error(t, err)
-		assert.Equal(t, "invalid user ID format. Must start with 'U' (e.g., 'U1234567')", err.Error())
+				assert.Error(t, err)
+				assert.Equal(t, tc.expectErr, err.Error())
+			})
+		}
 	})
 
 	t.Run("invalid date formats should error", func(t *testing.T) {

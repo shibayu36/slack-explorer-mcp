@@ -30,7 +30,15 @@ func main() {
 				mcp.Description("Search within a specific channel. Specify the channel name (e.g., 'general', 'random', 'チーム-dev')."),
 			),
 			mcp.WithString("from_user",
-				mcp.Description("Search for messages from a specific user. Must be a Slack user ID (e.g., 'U1234567'). Use slack_get_users to find user IDs first."),
+				mcp.Description("Search for messages from a specific user. Must be a Slack user ID (e.g., 'U1234567')."),
+			),
+			mcp.WithArray("with",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Search for messages in threads and direct messages with specific users. Must be Slack user IDs (e.g., ['U1234567', 'U2345678']). Multiple users can be specified."),
 			),
 			mcp.WithString("before",
 				mcp.Description("Search for messages before this date (YYYY-MM-DD)"),
