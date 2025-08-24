@@ -27,6 +27,11 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
     - `limit`: 取得する返信数（1-1000、デフォルト: 100）
     - `cursor`: ページネーション用カーソル
 
+- ユーザープロフィール一括取得 (`get_user_profiles`)
+  - 複数のユーザーのプロフィール情報を一括で取得します。ユーザーIDのリストを指定して、表示名、実名、メールアドレスなどの情報を取得できます。
+  - パラメータ
+    - `user_ids`: ユーザーID配列（必須、最大100個）
+
 ## セットアップ
 
 ### Slack User Tokenの取得
@@ -38,7 +43,7 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
    - `groups:read`, `groups:history` - 非公開チャンネル用
    - `im:read`, `im:history` - DM用
    - `mpim:read`, `mpim:history` - グループDM用
-   - `users:read` - ユーザー情報取得用
+   - `users:read`, `users.profile:read` - ユーザー情報・プロフィール取得用
 3. ワークスペースにアプリをインストール
 4. User OAuth Token（xoxp-で始まるトークン）を取得
 
