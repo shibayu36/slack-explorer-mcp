@@ -14,9 +14,7 @@ import (
 
 // SearchMessagesResponse represents the output for search_messages tool
 type SearchMessagesResponse struct {
-	OK       bool                   `json:"ok"`
-	Messages *SearchMessagesMatches `json:"messages,omitempty"`
-	Error    string                 `json:"error,omitempty"`
+	Messages *SearchMessagesMatches `json:"messages"`
 }
 
 type SearchMessagesMatches struct {
@@ -25,12 +23,11 @@ type SearchMessagesMatches struct {
 }
 
 type SearchMessage struct {
-	Type      string       `json:"type"`
-	User      string       `json:"user,omitempty"`
+	User      string       `json:"user"`
+	Username  string       `json:"username"`
 	Text      string       `json:"text"`
 	Timestamp string       `json:"ts"`
 	Channel   *ChannelInfo `json:"channel,omitempty"`
-	Permalink string       `json:"permalink,omitempty"`
 }
 
 type ChannelInfo struct {
@@ -190,7 +187,6 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 // convertToSearchResponse converts Slack API response to our response format
 func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchMessagesResponse {
 	response := &SearchMessagesResponse{
-		OK: true,
 		Messages: &SearchMessagesMatches{
 			Matches: make([]SearchMessage, 0, len(result.Matches)),
 		},
@@ -198,11 +194,10 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 
 	for _, match := range result.Matches {
 		msg := SearchMessage{
-			Type:      match.Type,
 			User:      match.User,
+			Username:  match.Username,
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
-			Permalink: match.Permalink,
 		}
 
 		if match.Channel.ID != "" {
