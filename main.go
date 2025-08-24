@@ -87,6 +87,28 @@ func main() {
 		handler.SearchMessages,
 	)
 
+	// Add get_thread_replies tool
+	s.AddTool(
+		mcp.NewTool("get_thread_replies",
+			mcp.WithDescription("Get all replies in a message thread"),
+			mcp.WithString("channel_id",
+				mcp.Required(),
+				mcp.Description("The ID of the channel containing the thread (e.g., 'C1234567')"),
+			),
+			mcp.WithString("thread_ts",
+				mcp.Required(),
+				mcp.Description("The timestamp of the parent message in format '1234567890.123456'"),
+			),
+			mcp.WithNumber("limit",
+				mcp.Description("Number of replies to retrieve (1-1000, default: 100)"),
+			),
+			mcp.WithString("cursor",
+				mcp.Description("Pagination cursor for next page of results"),
+			),
+		),
+		handler.GetThreadReplies,
+	)
+
 	if err := server.ServeStdio(s); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)

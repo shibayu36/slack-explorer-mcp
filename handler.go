@@ -263,3 +263,9 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 
 	return response
 }
+
+// GetThreadReplies handles the get_thread_replies tool call
+func (h *Handler) GetThreadReplies(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// TODO: Implement get_thread_replies functionality
+	return mcp.NewToolResultText("get_thread_replies not yet implemented"), nil
+}
