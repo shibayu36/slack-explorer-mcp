@@ -50,7 +50,7 @@ func main() {
 				mcp.Description("Search for messages on this specific date (YYYY-MM-DD)"),
 			),
 			mcp.WithString("during",
-				mcp.Description("Search for messages during a specific time period (e.g., 'July', '2023', 'last week')"),
+				mcp.Description("Search for messages during a specific time period (e.g., 'July', '2023')"),
 			),
 			mcp.WithBoolean("highlight",
 				mcp.Description("Enable highlighting of search results (default: false)"),
