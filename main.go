@@ -59,6 +59,22 @@ func main() {
 			mcp.WithNumber("page",
 				mcp.Description("Page number of results (1-100, default: 1)"),
 			),
+			mcp.WithArray("has",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Search for messages containing specific features. Supported values: emoji reactions (\":eyes:\", \":fire:\"), \"pin\" (pinned messages), \"file\" (messages with file attachments), \"link\" (messages with links), \"reaction\" (messages with any reactions). When specifying emoji reactions, they must be wrapped with colons (e.g., \":eyes:\"). Multiple values can be specified."),
+			),
+			mcp.WithArray("hasmy",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Search for messages where the authenticated user has specific emoji reactions. Only emoji codes are supported (e.g., [\":eyes:\", \":fire:\"]). Emoji codes must be wrapped with colons (e.g., \":eyes:\"). Multiple emoji reactions can be specified."),
+			),
 		),
 		handler.SearchMessages,
 	)

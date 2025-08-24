@@ -42,6 +42,8 @@ func TestHandler_buildSearchParams(t *testing.T) {
 			After:     "2024-01-01",
 			On:        "2024-01-10",
 			During:    "January",
+			Has:       []string{":eyes:", "pin", "file"},
+			HasMy:     []string{":fire:", ":thumbsup:"},
 			Highlight: true,
 			Sort:      "timestamp",
 			SortDir:   "asc",
@@ -52,7 +54,7 @@ func TestHandler_buildSearchParams(t *testing.T) {
 		query, params, err := handler.buildSearchParams(request)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "test message in:general from:<@U1234567> before:2024-01-15 after:2024-01-01 on:2024-01-10 during:January", query)
+		assert.Equal(t, "test message in:general from:<@U1234567> before:2024-01-15 after:2024-01-01 on:2024-01-10 during:January has::eyes: has:pin has:file hasmy::fire: hasmy::thumbsup:", query)
 		assert.Equal(t, slack.SearchParameters{
 			Sort:          "timestamp",
 			SortDirection: "asc",

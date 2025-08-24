@@ -71,6 +71,8 @@ func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolReques
 		After:     request.GetString("after", ""),
 		On:        request.GetString("on", ""),
 		During:    request.GetString("during", ""),
+		Has:       request.GetStringSlice("has", []string{}),
+		HasMy:     request.GetStringSlice("hasmy", []string{}),
 		Highlight: request.GetBool("highlight", false),
 		Sort:      request.GetString("sort", "score"),
 		SortDir:   request.GetString("sort_dir", "desc"),
@@ -104,6 +106,8 @@ type buildSearchParamsRequest struct {
 	After     string
 	On        string
 	During    string
+	Has       []string
+	HasMy     []string
 	Highlight bool
 	Sort      string
 	SortDir   string
@@ -156,6 +160,18 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 	}
 	if request.During != "" {
 		queryParts = append(queryParts, fmt.Sprintf("during:%s", request.During))
+	}
+
+	for _, has := range request.Has {
+		if has != "" {
+			queryParts = append(queryParts, fmt.Sprintf("has:%s", has))
+		}
+	}
+
+	for _, hasmy := range request.HasMy {
+		if hasmy != "" {
+			queryParts = append(queryParts, fmt.Sprintf("hasmy:%s", hasmy))
+		}
 	}
 
 	if request.Count < 1 || request.Count > 100 {
