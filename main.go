@@ -83,6 +83,9 @@ func main() {
 				),
 				mcp.Description("Search for messages where the authenticated user has specific emoji reactions. Only emoji codes are supported (e.g., [\":eyes:\", \":fire:\"]). Emoji codes must be wrapped with colons (e.g., \":eyes:\"). Multiple emoji reactions can be specified."),
 			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
 		),
 		handler.SearchMessages,
 	)
@@ -105,6 +108,9 @@ func main() {
 			mcp.WithString("cursor",
 				mcp.Description("Pagination cursor for next page of results"),
 			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
 		),
 		handler.GetThreadReplies,
 	)
@@ -122,6 +128,9 @@ func main() {
 				),
 				mcp.Description("Array of user IDs to retrieve profiles for (e.g., ['U1234567', 'U2345678']). Maximum 100 user IDs."),
 			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
 		),
 		handler.GetUserProfiles,
 	)
