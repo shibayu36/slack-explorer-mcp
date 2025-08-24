@@ -66,7 +66,20 @@ func NewHandler() *Handler {
 
 // SearchMessages handles the search_messages tool call
 func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	query, params, err := h.buildSearchParams(request)
+	query, params, err := h.buildSearchParams(buildSearchParamsRequest{
+		Query:     request.GetString("query", ""),
+		InChannel: request.GetString("in_channel", ""),
+		FromUser:  request.GetString("from_user", ""),
+		Before:    request.GetString("before", ""),
+		After:     request.GetString("after", ""),
+		On:        request.GetString("on", ""),
+		During:    request.GetString("during", ""),
+		Highlight: request.GetBool("highlight", false),
+		Sort:      request.GetString("sort", "score"),
+		SortDir:   request.GetString("sort_dir", "desc"),
+		Count:     request.GetInt("count", 20),
+		Page:      request.GetInt("page", 1),
+	})
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
@@ -86,88 +99,89 @@ func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolReques
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
+type buildSearchParamsRequest struct {
+	Query     string
+	InChannel string
+	FromUser  string
+	Before    string
+	After     string
+	On        string
+	During    string
+	Highlight bool
+	Sort      string
+	SortDir   string
+	Count     int
+	Page      int
+}
+
 // buildSearchParams validates parameters, applies defaults, and builds search query and parameters
-func (h *Handler) buildSearchParams(request mcp.CallToolRequest) (string, slack.SearchParameters, error) {
+func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, slack.SearchParameters, error) {
 	var queryParts []string
 
-	// Extract parameters with defaults
-	query := request.GetString("query", "")
-	inChannel := request.GetString("in_channel", "")
-	fromUser := request.GetString("from_user", "")
-	before := request.GetString("before", "")
-	after := request.GetString("after", "")
-	on := request.GetString("on", "")
-	during := request.GetString("during", "")
-	highlight := request.GetBool("highlight", false)
-	sort := request.GetString("sort", "score")
-	sortDir := request.GetString("sort_dir", "desc")
-	count := request.GetInt("count", 20)
-	page := request.GetInt("page", 1)
-
 	// Prevent modifiers in query field to enforce use of dedicated parameter fields
-	if query != "" {
+	if request.Query != "" {
 		modifierPattern := regexp.MustCompile(`\b(from|in|before|after|on|during|has|is|with):`)
-		if modifierPattern.MatchString(query) {
+		if modifierPattern.MatchString(request.Query) {
 			return "", slack.SearchParameters{}, fmt.Errorf("query field cannot contain modifiers (from:, in:, etc.). Please use the dedicated fields")
 		}
-		queryParts = append(queryParts, query)
+		queryParts = append(queryParts, request.Query)
 	}
 
-	if inChannel != "" {
-		queryParts = append(queryParts, fmt.Sprintf("in:%s", inChannel))
+	if request.InChannel != "" {
+		queryParts = append(queryParts, fmt.Sprintf("in:%s", request.InChannel))
 	}
 
-	if fromUser != "" {
-		if !strings.HasPrefix(fromUser, "U") {
+	if request.FromUser != "" {
+		if !strings.HasPrefix(request.FromUser, "U") {
 			return "", slack.SearchParameters{}, fmt.Errorf("invalid user ID format. Must start with 'U' (e.g., 'U1234567')")
 		}
-		queryParts = append(queryParts, fmt.Sprintf("from:<@%s>", fromUser))
+		queryParts = append(queryParts, fmt.Sprintf("from:<@%s>", request.FromUser))
 	}
 
 	datePattern := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	if before != "" {
-		if !datePattern.MatchString(before) {
+	if request.Before != "" {
+		if !datePattern.MatchString(request.Before) {
 			return "", slack.SearchParameters{}, fmt.Errorf("before date must be in YYYY-MM-DD format")
 		}
-		queryParts = append(queryParts, fmt.Sprintf("before:%s", before))
+		queryParts = append(queryParts, fmt.Sprintf("before:%s", request.Before))
 	}
-	if after != "" {
-		if !datePattern.MatchString(after) {
+	if request.After != "" {
+		if !datePattern.MatchString(request.After) {
 			return "", slack.SearchParameters{}, fmt.Errorf("after date must be in YYYY-MM-DD format")
 		}
-		queryParts = append(queryParts, fmt.Sprintf("after:%s", after))
+		queryParts = append(queryParts, fmt.Sprintf("after:%s", request.After))
 	}
-	if on != "" {
-		if !datePattern.MatchString(on) {
+	if request.On != "" {
+		if !datePattern.MatchString(request.On) {
 			return "", slack.SearchParameters{}, fmt.Errorf("on date must be in YYYY-MM-DD format")
 		}
-		queryParts = append(queryParts, fmt.Sprintf("on:%s", on))
+		queryParts = append(queryParts, fmt.Sprintf("on:%s", request.On))
 	}
-	if during != "" {
-		queryParts = append(queryParts, fmt.Sprintf("during:%s", during))
+	if request.During != "" {
+		queryParts = append(queryParts, fmt.Sprintf("during:%s", request.During))
 	}
 
-	if count < 1 || count > 100 {
-		return "", slack.SearchParameters{}, fmt.Errorf("count must be between 1 and 100, got %d", count)
+	if request.Count < 1 || request.Count > 100 {
+		return "", slack.SearchParameters{}, fmt.Errorf("count must be between 1 and 100, got %d", request.Count)
 	}
-	if page < 1 || page > 100 {
-		return "", slack.SearchParameters{}, fmt.Errorf("page must be between 1 and 100, got %d", page)
+	if request.Page < 1 || request.Page > 100 {
+		return "", slack.SearchParameters{}, fmt.Errorf("page must be between 1 and 100, got %d", request.Page)
 	}
-	if sort != "score" && sort != "timestamp" {
-		return "", slack.SearchParameters{}, fmt.Errorf("sort must be 'score' or 'timestamp', got '%s'", sort)
+	if request.Sort != "score" && request.Sort != "timestamp" {
+		return "", slack.SearchParameters{}, fmt.Errorf("sort must be 'score' or 'timestamp', got '%s'", request.Sort)
 	}
-	if sortDir != "asc" && sortDir != "desc" {
-		return "", slack.SearchParameters{}, fmt.Errorf("sort_dir must be 'asc' or 'desc', got '%s'", sortDir)
+	if request.SortDir != "asc" && request.SortDir != "desc" {
+		return "", slack.SearchParameters{}, fmt.Errorf("sort_dir must be 'asc' or 'desc', got '%s'", request.SortDir)
 	}
 
 	searchQuery := strings.Join(queryParts, " ")
 
 	params := slack.SearchParameters{
-		Sort:          sort,
-		SortDirection: sortDir,
-		Highlight:     highlight,
-		Count:         count,
-		Page:          page,
+		Sort:          request.Sort,
+		SortDirection: request.SortDir,
+		Highlight:     request.Highlight,
+		Count:         request.Count,
+		Page:          request.Page,
 	}
 
 	return searchQuery, params, nil
