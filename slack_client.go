@@ -10,6 +10,7 @@ import (
 type SlackClient interface {
 	SearchMessages(query string, params slack.SearchParameters) (*slack.SearchMessages, error)
 	GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error)
+	GetUserProfile(userID string) (*slack.UserProfile, error)
 }
 
 type slackClient struct {
@@ -39,6 +40,17 @@ func (c *slackClient) GetConversationReplies(params *slack.GetConversationReplie
 		return nil, false, "", c.mapError(err)
 	}
 	return messages, hasMore, nextCursor, nil
+}
+
+// GetUserProfile retrieves a user's profile information
+func (c *slackClient) GetUserProfile(userID string) (*slack.UserProfile, error) {
+	profile, err := c.client.GetUserProfile(&slack.GetUserProfileParameters{
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, c.mapError(err)
+	}
+	return profile, nil
 }
 
 func (c *slackClient) mapError(err error) error {
