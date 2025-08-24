@@ -112,6 +112,52 @@
 - `thread_ts`は Slack のパーマリンクURLから抽出して設定
 - User Token（xoxp）を使用し、`search.messages` APIを呼び出す
 
+### get_thread_replies スキーマ詳細
+
+#### 入力パラメータ
+```json
+{
+  "channel_id": "string (required)",    // チャンネルID（例: "C1234567"）
+  "thread_ts": "string (required)",     // 親メッセージのタイムスタンプ（例: "1234567890.123456"）
+  "limit": "number (optional)",         // 取得する返信数（1-1000、デフォルト: 100）
+  "cursor": "string (optional)"         // ページネーション用カーソル
+}
+```
+
+#### 出力形式
+```json
+{
+  "messages": [
+    {
+      "user": "U1234567",
+      "text": "メッセージ本文",
+      "ts": "1234567890.123456",
+      "reply_count": 5,                    // 返信数（親メッセージの場合のみ）
+      "reply_users": ["U1234567", "U2345678"], // 返信したユーザー（親メッセージの場合のみ）
+      "reactions": [                       // リアクション情報（オプション）
+        {
+          "name": "thumbsup",
+          "count": 2,
+          "users": ["U1234567", "U2345678"]
+        }
+      ]
+    }
+  ],
+  "has_more": false,                      // さらに返信があるか
+  "response_metadata": {
+    "next_cursor": "string"                // 次ページ用カーソル（has_more=trueの場合）
+  }
+}
+```
+
+#### 実装上の注意点
+- `channel_id`はSlack APIの`conversations.replies`に必要なチャンネルID
+- `thread_ts`は親メッセージのタイムスタンプ（形式: `1234567890.123456`）
+- 最初のメッセージは親メッセージ自体を含む（Slack APIの仕様）
+- User Token（xoxp）を使用し、`conversations.replies` APIを呼び出す
+- ページネーションは`cursor`と`limit`で制御
+- `has_more`がtrueの場合、`response_metadata.next_cursor`を次回リクエストの`cursor`に使用
+
 ※ 他のツールの入力・出力詳細は後続実装時に定義
 
 ---
