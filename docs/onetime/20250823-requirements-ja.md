@@ -38,10 +38,17 @@
 ---
 
 ## MCPツール（APIサーフェス）
+
+### 実装済み（✅）
+- **`search_messages`** — Search for messages in the workspace with powerful filters
+  - 高度な検索フィルタ（with, has, hasmy）対応
+  - ページネーション完全対応
+  - エラーハンドリング実装済み
+
+### 未実装（🚧）
 - `list_channels` — List channels in the workspace with pagination
 - `get_channel_history` — Get recent messages from a channel
 - `get_thread_replies` — Get all replies in a message thread
-- `search_messages` — Search for messages in the workspace with powerful filters
 
 ### search_messages スキーマ詳細
 
@@ -51,10 +58,13 @@
   "query": "string (optional)",        // 基本検索クエリ（修飾子なし）
   "in_channel": "string (optional)",   // チャンネル名（例: "general", "random", "チーム-dev"）
   "from_user": "string (optional)",    // ユーザーID（例: "U1234567"）
+  "with": "array (optional)",          // 特定ユーザーとのDM/スレッドを検索。ユーザーID配列（例: ["U1234567", "U2345678"]）
   "before": "string (optional)",       // YYYY-MM-DD形式
   "after": "string (optional)",        // YYYY-MM-DD形式  
   "on": "string (optional)",           // YYYY-MM-DD形式
   "during": "string (optional)",       // 期間指定（例: "July", "2023", "last week"）
+  "has": "array (optional)",           // 特定機能を含むメッセージ検索。対応値: 絵文字（":eyes:", ":fire:"）, "pin", "file", "link", "reaction"
+  "hasmy": "array (optional)",         // 認証ユーザーが特定絵文字リアクションしたメッセージ検索。絵文字のみ（例: [":eyes:", ":fire:"]）
   "highlight": "boolean (optional)",   // 検索結果のハイライト（デフォルト: false）
   "sort": "string (optional)",         // ソート方法: "score" | "timestamp"（デフォルト: "score"）
   "sort_dir": "string (optional)",     // ソート順: "asc" | "desc"（デフォルト: "desc"）
@@ -66,19 +76,18 @@
 #### 出力形式
 ```json
 {
-  "ok": true,
   "messages": {
     "matches": [
       {
-        "type": "message",
         "user": "U1234567",
+        "username": "john.doe",
         "text": "メッセージ本文",
         "ts": "1234567890.123456",
+        "thread_ts": "1234567890.123456",  // スレッドの場合のみ。メインメッセージの場合は空文字
         "channel": {
           "id": "C1234567",
           "name": "channel-name"
-        },
-        "permalink": "https://workspace.slack.com/archives/..."
+        }
       }
     ],
     "pagination": {
@@ -97,6 +106,10 @@
 - `query`フィールドには修飾子（from:, in:等）を含めない
 - チャンネル指定は`in_channel`でチャンネル名を受け取り、そのままSlack検索APIに渡す
 - ユーザー指定は`from_user`でユーザーIDを受け取り、`<@USER_ID>`形式でクエリに追加
+- `with`パラメータはユーザーID配列を受け取り、`with:<@USER_ID>`形式でクエリに追加
+- `has`パラメータは機能指定を受け取り、`has:VALUE`形式でクエリに追加
+- `hasmy`パラメータは絵文字コードを受け取り、`hasmy:EMOJI`形式でクエリに追加
+- `thread_ts`は Slack のパーマリンクURLから抽出して設定
 - User Token（xoxp）を使用し、`search.messages` APIを呼び出す
 
 ※ 他のツールの入力・出力詳細は後続実装時に定義
@@ -104,13 +117,15 @@
 ---
 
 ## Slack API依存とスコープ
+- **使用SDK**: `github.com/slack-go/slack` - 導入済み ✅
 - 使用メソッド（想定）：`conversations.list`, `conversations.history`, `conversations.replies`, `users.list`（表示名解決用）, `search.messages`（検索）
+  - **実装済み**: `search.messages` ✅
 - 必要スコープ（User Token想定）
   - 公開：`channels:read`, `channels:history`
   - 非公開：`groups:read`, `groups:history`
   - DM/マルチDM：`im:read`, `im:history`, `mpim:read`, `mpim:history`
   - ユーザー：`users:read`
-  - 検索：`search:read`
+  - 検索：`search:read` ✅
 - 注意点
   - プライベート/DMは**ユーザー参加済み**でなければ取得不可
   - ワークスペース単位の前提（Grid横断はしない）
@@ -142,7 +157,21 @@
 ---
 
 ## マイルストン/実装順
-1) `search_messages`
-2) `get_thread_replies`
-3) `get_channel_history`
-4) `list_channels`
+
+### 完了済み（✅）
+1) **`search_messages`** - 完全実装済み
+   - Slack SDK（`github.com/slack-go/slack`）導入完了
+   - 高度な検索フィルタリング機能（with, has, hasmy）実装
+   - パラメータバリデーション実装
+   - Slackエラーマッピング実装
+   - ページネーション対応
+
+### 未実装（🚧）
+2) `get_thread_replies` - 未実装
+3) `get_channel_history` - 未実装  
+4) `list_channels` - 未実装
+
+### 技術的進展
+- **認証・エラーハンドリング**: 完了済み
+- **SlackClient インターフェース設計**: 完了済み
+- **MCPサーバー基盤**: 完了済み
