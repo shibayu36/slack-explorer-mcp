@@ -2,12 +2,16 @@ module github.com/shibayu36/slack-explorer-mcp
 
 go 1.24.1
 
-require github.com/mark3labs/mcp-go v0.38.0
+require (
+	github.com/mark3labs/mcp-go v0.38.0
+	github.com/slack-go/slack v0.17.3
+)
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
