@@ -207,3 +207,41 @@ func TestHandler_buildSearchParams(t *testing.T) {
 		}
 	})
 }
+
+func TestExtractThreadTsFromPermalink(t *testing.T) {
+	tests := []struct {
+		name      string
+		permalink string
+		expected  string
+	}{
+		{
+			name:      "Valid permalink with thread_ts",
+			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
+			expected:  "1755823401.732729",
+		},
+		{
+			name:      "Permalink without thread_ts",
+			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329",
+			expected:  "",
+		},
+		{
+			name:      "Empty permalink",
+			permalink: "",
+			expected:  "",
+		},
+		{
+			name:      "Permalink with thread_ts using & separator",
+			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?foo=bar&thread_ts=1755823401.732729",
+			expected:  "1755823401.732729",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractThreadTsFromPermalink(tt.permalink)
+			if result != tt.expected {
+				t.Errorf("extractThreadTsFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
+			}
+		})
+	}
+}

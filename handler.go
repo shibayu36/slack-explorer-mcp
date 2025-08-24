@@ -28,6 +28,8 @@ type SearchMessage struct {
 	Text      string       `json:"text"`
 	Timestamp string       `json:"ts"`
 	Channel   *ChannelInfo `json:"channel,omitempty"`
+	// Fill if the message is in a thread
+	ThreadTs string `json:"thread_ts,omitempty"`
 }
 
 type ChannelInfo struct {
@@ -211,6 +213,18 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 	return searchQuery, params, nil
 }
 
+// extractThreadTsFromPermalink extracts thread_ts from Slack permalink URL
+func extractThreadTsFromPermalink(permalink string) string {
+	// Extract thread_ts from URL pattern like:
+	// https://workspace.slack.com/archives/C123/p1234567890123456?thread_ts=1234567890.123456
+	re := regexp.MustCompile(`[?&]thread_ts=([0-9.]+)`)
+	matches := re.FindStringSubmatch(permalink)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
+}
+
 // convertToSearchResponse converts Slack API response to our response format
 func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchMessagesResponse {
 	response := &SearchMessagesResponse{
@@ -225,6 +239,7 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 			Username:  match.Username,
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
+			ThreadTs:  extractThreadTsFromPermalink(match.Permalink),
 		}
 
 		if match.Channel.ID != "" {
