@@ -24,7 +24,6 @@ type SearchMessagesMatches struct {
 
 type SearchMessage struct {
 	User      string       `json:"user"`
-	Username  string       `json:"username"`
 	Text      string       `json:"text"`
 	Timestamp string       `json:"ts"`
 	Channel   *ChannelInfo `json:"channel,omitempty"`
@@ -236,7 +235,6 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 	for _, match := range result.Matches {
 		msg := SearchMessage{
 			User:      match.User,
-			Username:  match.Username,
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
 			ThreadTs:  extractThreadTsFromPermalink(match.Permalink),
