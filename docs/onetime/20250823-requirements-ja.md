@@ -44,11 +44,14 @@
   - 高度な検索フィルタ（with, has, hasmy）対応
   - ページネーション完全対応
   - エラーハンドリング実装済み
+- **`get_thread_replies`** — Get all replies in a message thread
+  - ページネーション対応
+  - エラーハンドリング実装済み
 
 ### 未実装（🚧）
 - `list_channels` — List channels in the workspace with pagination
 - `get_channel_history` — Get recent messages from a channel
-- `get_thread_replies` — Get all replies in a message thread
+- `get_user_profiles` — Get multiple users profile information in bulk
 
 ### search_messages スキーマ詳細
 
@@ -156,6 +159,39 @@
 - User Token（xoxp）を使用し、`conversations.replies` APIを呼び出す
 - ページネーションは`cursor`と`limit`で制御
 - `has_more`がtrueの場合、`response_metadata.next_cursor`を次回リクエストの`cursor`に使用
+
+### get_user_profiles スキーマ詳細
+
+#### 入力パラメータ
+```json
+{
+  "user_ids": "array (required)"         // ユーザーID配列（例: ["U1234567", "U2345678"]）最大100個
+}
+```
+
+#### 出力形式
+```json
+[
+  {
+    "user_id": "U1234567",
+    "display_name": "John Doe",
+    "real_name": "John Doe",
+    "email": "john@example.com"
+  },
+  {
+    "user_id": "U2345678",
+    "error": "user_not_found"              // エラーの場合はerrorフィールドのみ
+  }
+]
+```
+
+#### 実装上の注意点
+- `user_ids`は必須パラメータで、最大100個のユーザーIDを受け取る
+- 各ユーザーIDは`U`で始まる形式（例: `U1234567`）である必要がある
+- Slack APIの`users.profile.get`を順次呼び出し、個別のエラーも含めて結果を返す
+- User Token（xoxp）を使用し、`users.profile.get` APIを呼び出す
+- 一部のユーザーでエラーが発生しても、他のユーザーの情報は正常に返す
+- 必要スコープ: `users:read`, `users.profile:read`
 
 ※ 他のツールの入力・出力詳細は後続実装時に定義
 
