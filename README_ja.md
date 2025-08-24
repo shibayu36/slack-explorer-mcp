@@ -56,7 +56,7 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
       "mcpServers": {
         "slack-explorer-mcp": {
           "command": "docker",
-          "args": ["run", "-i", "--rm",
+          "args": ["run", "-i", "--rm", "--pull", "always",
             "-e", "SLACK_USER_TOKEN=xoxp-your-token-here",
             "ghcr.io/shibayu36/slack-explorer-mcp:latest"
           ]
@@ -68,7 +68,7 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
     Claude Codeを使用している場合:
 
     ```bash
-    claude mcp add slack-explorer-mcp -- docker run -i --rm \
+    claude mcp add slack-explorer-mcp -- docker run -i --rm --pull always \
       -e SLACK_USER_TOKEN=xoxp-your-token-here \
       ghcr.io/shibayu36/slack-explorer-mcp:latest
     ```

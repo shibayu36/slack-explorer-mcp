@@ -56,7 +56,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
       "mcpServers": {
         "slack-explorer-mcp": {
           "command": "docker",
-          "args": ["run", "-i", "--rm",
+          "args": ["run", "-i", "--rm", "--pull", "always",
             "-e", "SLACK_USER_TOKEN=xoxp-your-token-here",
             "ghcr.io/shibayu36/slack-explorer-mcp:latest"
           ]
@@ -68,7 +68,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
     If you're using Claude Code:
 
     ```bash
-    claude mcp add slack-explorer-mcp -- docker run -i --rm \
+    claude mcp add slack-explorer-mcp -- docker run -i --rm --pull always \
       -e SLACK_USER_TOKEN=xoxp-your-token-here \
       ghcr.io/shibayu36/slack-explorer-mcp:latest
     ```
