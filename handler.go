@@ -450,3 +450,9 @@ func (h *Handler) getUserProfile(userID string) UserProfile {
 		Email:       slackProfile.Email,
 	}
 }
+
+// SearchUsersByName searches for users by display name
+func (h *Handler) SearchUsersByName(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// TODO: Implement search_users_by_name
+	return mcp.NewToolResultError("not implemented"), nil
+}
