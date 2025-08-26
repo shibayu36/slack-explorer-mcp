@@ -54,6 +54,7 @@
 ### 未実装（🚧）
 - `list_channels` — List channels in the workspace with pagination
 - `get_channel_history` — Get recent messages from a channel
+- `search_users_by_name` — Search users by display name
 
 ### search_messages スキーマ詳細
 
@@ -195,6 +196,37 @@
 - 一部のユーザーでエラーが発生しても、他のユーザーの情報は正常に返す
 - 必要スコープ: `users:read`, `users.profile:read`
 
+### search_users_by_name スキーマ詳細
+
+#### 入力パラメータ
+```json
+{
+  "display_name": "string (required)"     // 検索する表示名（完全一致、大文字小文字区別）
+}
+```
+
+#### 出力形式
+```json
+[
+  {
+    "user_id": "U1234567",
+    "display_name": "John Doe",
+    "real_name": "John Doe",
+    "email": "john@example.com"
+  }
+]
+```
+
+#### 実装上の注意点
+- `display_name`は必須パラメータで、完全一致検索を行う（大文字小文字を区別）
+- Slack APIの`users.list`を使用して全ユーザーを取得
+- `profile.display_name`が検索文字列と完全一致するユーザーをフィルタリング
+- 既存の`UserProfile`型の配列を返す（`error`フィールドは使用しない）
+- User Token（xoxp）を使用し、`users.list` APIを呼び出す
+- ユーザーが見つからない場合は空配列`[]`を返す（エラーではない）
+- 必要スコープ: `users:read`
+- 将来の拡張予定: `real_name`検索、部分一致オプション、大文字小文字無視オプション
+
 ※ 他のツールの入力・出力詳細は後続実装時に定義
 
 ---
@@ -203,6 +235,7 @@
 - **使用SDK**: `github.com/slack-go/slack` - 導入済み ✅
 - 使用メソッド（想定）：`conversations.list`, `conversations.history`, `conversations.replies`, `users.list`（表示名解決用）, `search.messages`（検索）, `users.profile.get`（プロフィール取得）
   - **実装済み**: `search.messages`, `conversations.replies`, `users.profile.get` ✅
+  - **未実装**: `users.list`（`search_users_by_name`で使用予定）
 - 必要スコープ（User Token想定）
   - 公開：`channels:read`, `channels:history`
   - 非公開：`groups:read`, `groups:history`
@@ -258,8 +291,11 @@
    - フラット配列レスポンス形式
 
 ### 未実装（🚧）
-4) `get_channel_history` - 未実装  
-5) `list_channels` - 未実装
+4) `search_users_by_name` - 未実装
+   - `users.list` APIを使用して表示名でユーザー検索
+   - 初期は完全一致検索のみ
+5) `get_channel_history` - 未実装  
+6) `list_channels` - 未実装
 
 ### 技術的進展
 - **認証・エラーハンドリング**: 完了済み
