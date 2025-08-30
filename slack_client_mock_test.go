@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,6 +29,15 @@ func (m *SlackClientMock) GetUserProfile(userID string) (*slack.UserProfile, err
 	var res *slack.UserProfile
 	if v := args.Get(0); v != nil {
 		res = v.(*slack.UserProfile)
+	}
+	return res, args.Error(1)
+}
+
+func (m *SlackClientMock) GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error) {
+	args := m.Called(ctx, options)
+	var res []slack.User
+	if v := args.Get(0); v != nil {
+		res = v.([]slack.User)
 	}
 	return res, args.Error(1)
 }
