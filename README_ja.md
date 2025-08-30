@@ -38,14 +38,16 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
 
 1. [Slack API](https://api.slack.com/apps)でアプリを作成
 2. OAuth & Permissionsで以下のUser Token Scopesを追加：
+   - `channels:history` - 公開チャンネル用
+   - `groups:history` - 非公開チャンネル用
+   - `im:history` - DM用
+   - `mpim:history` - グループDM用
    - `search:read` - メッセージ検索用
-   - `channels:read`, `channels:history` - 公開チャンネル用
-   - `groups:read`, `groups:history` - 非公開チャンネル用
-   - `im:read`, `im:history` - DM用
-   - `mpim:read`, `mpim:history` - グループDM用
-   - `users:read`, `users.profile:read` - ユーザー情報・プロフィール取得用
+   - `users.profile:read` - ユーザープロフィール取得用
+   - `users:read` - ユーザー情報取得用
 3. ワークスペースにアプリをインストール
 4. User OAuth Token（xoxp-で始まるトークン）を取得
+   - もし同じワークスペースで複数ユーザーで使いたい場合、Collaboratorsとして追加し、各ユーザーがOAuth & PermissionsからReinstallを実行しUser OAuth Tokenを取得すると楽です
 
 ### MCPサーバーの設定
 

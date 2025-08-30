@@ -38,14 +38,16 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
 
 1. Create an app at [Slack API](https://api.slack.com/apps)
 2. Add the following User Token Scopes in OAuth & Permissions:
+   - `channels:history` - For public channels
+   - `groups:history` - For private channels
+   - `im:history` - For direct messages
+   - `mpim:history` - For group direct messages
    - `search:read` - For message search
-   - `channels:read`, `channels:history` - For public channels
-   - `groups:read`, `groups:history` - For private channels
-   - `im:read`, `im:history` - For direct messages
-   - `mpim:read`, `mpim:history` - For group direct messages
-   - `users:read`, `users.profile:read` - For user information and profiles
+   - `users.profile:read` - For user profiles
+   - `users:read` - For user information
 3. Install the app to your workspace
 4. Get the User OAuth Token (starts with xoxp-)
+   - Tip: To use with multiple users in the same workspace, add them as Collaborators and have each user reinstall from OAuth & Permissions to get their own User OAuth Token
 
 ### MCP Server Configuration
 
