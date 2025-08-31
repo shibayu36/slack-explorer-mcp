@@ -14,7 +14,8 @@ import (
 
 // SearchMessagesResponse represents the output for search_messages tool
 type SearchMessagesResponse struct {
-	Messages *SearchMessagesMatches `json:"messages"`
+	WorkspaceURL string                 `json:"workspace_url"`
+	Messages     *SearchMessagesMatches `json:"messages"`
 }
 
 type SearchMessagesMatches struct {
@@ -247,9 +248,14 @@ func (h *Handler) extractWorkspaceURLFromPermalink(permalink string) string {
 // convertToSearchResponse converts Slack API response to our response format
 func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchMessagesResponse {
 	response := &SearchMessagesResponse{
+		WorkspaceURL: "",
 		Messages: &SearchMessagesMatches{
 			Matches: make([]SearchMessage, 0, len(result.Matches)),
 		},
+	}
+
+	if len(result.Matches) > 0 {
+		response.WorkspaceURL = h.extractWorkspaceURLFromPermalink(result.Matches[0].Permalink)
 	}
 
 	for _, match := range result.Matches {

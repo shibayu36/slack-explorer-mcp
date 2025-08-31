@@ -91,6 +91,7 @@ func TestHandler_SearchMessages(t *testing.T) {
 		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
 		assert.NoError(t, err)
 
+		assert.Equal(t, "https://workspace.slack.com", response["workspace_url"])
 		assert.Contains(t, response, "messages")
 		messages := response["messages"].(map[string]interface{})
 
@@ -120,6 +121,64 @@ func TestHandler_SearchMessages(t *testing.T) {
 		assert.Equal(t, float64(2), pagination["page"])
 		assert.Equal(t, float64(2), pagination["page_count"])
 		assert.Equal(t, float64(50), pagination["per_page"])
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns empty when no messages found", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		expectedQuery := "nonexistent query"
+		expectedParams := slack.SearchParameters{
+			Sort:          "score",
+			SortDirection: "desc",
+			Highlight:     false,
+			Count:         20,
+			Page:          1,
+		}
+
+		mockResponse := &slack.SearchMessages{
+			Matches: []slack.SearchMessage{},
+			Paging: slack.Paging{
+				Count: 0,
+				Total: 0,
+				Page:  1,
+				Pages: 0,
+			},
+			Total: 0,
+		}
+
+		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_messages",
+				Arguments: map[string]interface{}{
+					"query": "nonexistent query",
+				},
+			},
+		}
+
+		res, err := handler.SearchMessages(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "", response["workspace_url"])
+		assert.Contains(t, response, "messages")
+		messages := response["messages"].(map[string]interface{})
+		matches := messages["matches"].([]interface{})
+		assert.Equal(t, 0, len(matches))
 
 		mockClient.AssertExpectations(t)
 	})
