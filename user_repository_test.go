@@ -14,16 +14,16 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "jdoe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
 			{
 				ID: "U2345678",
 				Profile: slack.UserProfile{
-					DisplayName: "Jane Smith",
-					RealName:    "Jane Smith",
+					DisplayName: "jane.s",
+					RealName:    "Jane Marie Smith",
 					Email:       "jane@example.com",
 				},
 			},
@@ -32,12 +32,12 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		repo := NewUserRepository(mockClient)
 
-		result, err := repo.FindByDisplayName(t.Context(), "John Doe", true)
+		result, err := repo.FindByDisplayName(t.Context(), "jdoe", true)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "U1234567", result[0].ID)
-		assert.Equal(t, "John Doe", result[0].Profile.DisplayName)
+		assert.Equal(t, "jdoe", result[0].Profile.DisplayName)
 		mockClient.AssertExpectations(t)
 	})
 
@@ -47,24 +47,24 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "john.doe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
 			{
 				ID: "U2345678",
 				Profile: slack.UserProfile{
-					DisplayName: "Anne Smith",
-					RealName:    "Anne Smith",
+					DisplayName: "anne.smith",
+					RealName:    "Anne Elizabeth Smith",
 					Email:       "anne@example.com",
 				},
 			},
 			{
 				ID: "U3456789",
 				Profile: slack.UserProfile{
-					DisplayName: "Jane Johnson",
-					RealName:    "Jane Johnson",
+					DisplayName: "jane.johnson",
+					RealName:    "Jane Marie Johnson",
 					Email:       "jane@example.com",
 				},
 			},
@@ -73,8 +73,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		repo := NewUserRepository(mockClient)
 
-		// Search for "John" should match John Doe and Jane Johnson
-		result, err := repo.FindByDisplayName(t.Context(), "John", false)
+		// Search for "john" should match john.doe and jane.johnson
+		result, err := repo.FindByDisplayName(t.Context(), "john", false)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
@@ -83,8 +83,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		for _, user := range result {
 			foundUsers[user.ID] = true
 		}
-		assert.True(t, foundUsers["U1234567"]) // John Doe
-		assert.True(t, foundUsers["U3456789"]) // Jane Johnson
+		assert.True(t, foundUsers["U1234567"]) // john.doe
+		assert.True(t, foundUsers["U3456789"]) // jane.johnson
 
 		mockClient.AssertExpectations(t)
 	})
@@ -95,8 +95,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "jdoe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
@@ -106,12 +106,12 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		repo := NewUserRepository(mockClient)
 
 		// First call - should call API
-		result1, err1 := repo.FindByDisplayName(t.Context(), "John Doe", true)
+		result1, err1 := repo.FindByDisplayName(t.Context(), "jdoe", true)
 		assert.NoError(t, err1)
 		assert.Len(t, result1, 1)
 
 		// Second call - should use cache, not call API again
-		result2, err2 := repo.FindByDisplayName(t.Context(), "John Doe", true)
+		result2, err2 := repo.FindByDisplayName(t.Context(), "jdoe", true)
 		assert.NoError(t, err2)
 		assert.Len(t, result2, 1)
 		assert.Equal(t, result1[0].ID, result2[0].ID)
@@ -125,8 +125,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "jdoe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},

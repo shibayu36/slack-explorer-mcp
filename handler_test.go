@@ -477,16 +477,16 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "jdoe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
 			{
 				ID: "U2345678",
 				Profile: slack.UserProfile{
-					DisplayName: "Jane Johnson",
-					RealName:    "Jane Johnson",
+					DisplayName: "jane.j",
+					RealName:    "Jane Marie Johnson",
 					Email:       "jane@example.com",
 				},
 			},
@@ -506,7 +506,7 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 			}{
 				Name: "search_users_by_name",
 				Arguments: map[string]interface{}{
-					"display_name": "John Doe",
+					"display_name": "jdoe",
 					"exact":        true,
 				},
 			},
@@ -521,8 +521,8 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		assert.Equal(t, 1, len(profiles))
 
 		assert.Equal(t, "U1234567", profiles[0]["user_id"])
-		assert.Equal(t, "John Doe", profiles[0]["display_name"])
-		assert.Equal(t, "John Doe", profiles[0]["real_name"])
+		assert.Equal(t, "jdoe", profiles[0]["display_name"])
+		assert.Equal(t, "John David Doe", profiles[0]["real_name"])
 		assert.Equal(t, "john@example.com", profiles[0]["email"])
 
 		mockClient.AssertExpectations(t)
@@ -534,24 +534,24 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "john.doe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
 			{
 				ID: "U2345678",
 				Profile: slack.UserProfile{
-					DisplayName: "Jane Johnson",
-					RealName:    "Jane Johnson",
+					DisplayName: "jane.johnson",
+					RealName:    "Jane Marie Johnson",
 					Email:       "jane@example.com",
 				},
 			},
 			{
 				ID: "U3456789",
 				Profile: slack.UserProfile{
-					DisplayName: "Anne Smith",
-					RealName:    "Anne Smith",
+					DisplayName: "anne.smith",
+					RealName:    "Anne Elizabeth Smith",
 					Email:       "anne@example.com",
 				},
 			},
@@ -571,7 +571,7 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 			}{
 				Name: "search_users_by_name",
 				Arguments: map[string]interface{}{
-					"display_name": "John",
+					"display_name": "john",
 					"exact":        false,
 				},
 			},
@@ -586,10 +586,10 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		assert.Equal(t, 2, len(profiles))
 
 		assert.Equal(t, "U1234567", profiles[0]["user_id"])
-		assert.Equal(t, "John Doe", profiles[0]["display_name"])
+		assert.Equal(t, "john.doe", profiles[0]["display_name"])
 
 		assert.Equal(t, "U2345678", profiles[1]["user_id"])
-		assert.Equal(t, "Jane Johnson", profiles[1]["display_name"])
+		assert.Equal(t, "jane.johnson", profiles[1]["display_name"])
 
 		mockClient.AssertExpectations(t)
 	})
@@ -600,8 +600,8 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 			{
 				ID: "U1234567",
 				Profile: slack.UserProfile{
-					DisplayName: "John Doe",
-					RealName:    "John Doe",
+					DisplayName: "jdoe",
+					RealName:    "John David Doe",
 					Email:       "john@example.com",
 				},
 			},
