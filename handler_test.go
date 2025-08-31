@@ -211,7 +211,8 @@ func TestHandler_buildSearchParams(t *testing.T) {
 	})
 }
 
-func TestExtractThreadTsFromPermalink(t *testing.T) {
+func TestHandler_ExtractThreadTsFromPermalink(t *testing.T) {
+	handler := &Handler{}
 	tests := []struct {
 		name      string
 		permalink string
@@ -241,15 +242,14 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := extractThreadTsFromPermalink(tt.permalink)
-			if result != tt.expected {
-				t.Errorf("extractThreadTsFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
-			}
+			result := handler.extractThreadTsFromPermalink(tt.permalink)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestExtractWorkspaceURLFromPermalink(t *testing.T) {
+func TestHandler_ExtractWorkspaceURLFromPermalink(t *testing.T) {
+	handler := &Handler{}
 	tests := []struct {
 		name      string
 		permalink string
@@ -274,10 +274,8 @@ func TestExtractWorkspaceURLFromPermalink(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := extractWorkspaceURLFromPermalink(tt.permalink)
-			if result != tt.expected {
-				t.Errorf("extractWorkspaceURLFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
-			}
+			result := handler.extractWorkspaceURLFromPermalink(tt.permalink)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

@@ -216,7 +216,7 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 }
 
 // extractThreadTsFromPermalink extracts thread_ts from Slack permalink URL
-func extractThreadTsFromPermalink(permalink string) string {
+func (h *Handler) extractThreadTsFromPermalink(permalink string) string {
 	// Extract thread_ts from URL pattern like:
 	// https://workspace.slack.com/archives/C123/p1234567890123456?thread_ts=1234567890.123456
 	re := regexp.MustCompile(`[?&]thread_ts=([0-9.]+)`)
@@ -228,7 +228,7 @@ func extractThreadTsFromPermalink(permalink string) string {
 }
 
 // extractWorkspaceURLFromPermalink extracts workspace URL from Slack permalink
-func extractWorkspaceURLFromPermalink(permalink string) string {
+func (h *Handler) extractWorkspaceURLFromPermalink(permalink string) string {
 	// Extract workspace URL from permalink pattern like:
 	// https://workspace.slack.com/archives/C123/p1234567890123456
 	// Returns: https://workspace.slack.com
@@ -257,7 +257,7 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 			User:      match.User,
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
-			ThreadTs:  extractThreadTsFromPermalink(match.Permalink),
+			ThreadTs:  h.extractThreadTsFromPermalink(match.Permalink),
 		}
 
 		if match.Channel.ID != "" {
