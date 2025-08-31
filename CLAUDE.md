@@ -91,3 +91,6 @@ According to `docs/onetime/20250823-requirements-ja.md`, the following tools are
 2. **Background context**: When there's important background information not evident from the code
 3. **Complex logic explanation**: When complex code requires explanation to understand the intended behavior
 4. **Large code section separation**: For 100+ line code blocks where sectioning with explanatory comments is beneficial
+
+## Creating Pull Request
+Use `.github/pull_request_template.md` to create pull request.

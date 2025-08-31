@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/slack-go/slack"
@@ -11,6 +12,7 @@ type SlackClient interface {
 	SearchMessages(query string, params slack.SearchParameters) (*slack.SearchMessages, error)
 	GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error)
 	GetUserProfile(userID string) (*slack.UserProfile, error)
+	GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error)
 }
 
 type slackClient struct {
@@ -51,6 +53,16 @@ func (c *slackClient) GetUserProfile(userID string) (*slack.UserProfile, error) 
 		return nil, c.mapError(err)
 	}
 	return profile, nil
+}
+
+// GetUsers retrieves users from the workspace
+// The slack-go library handles pagination internally when using GetUsersContext
+func (c *slackClient) GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error) {
+	users, err := c.client.GetUsersContext(ctx, options...)
+	if err != nil {
+		return nil, c.mapError(err)
+	}
+	return users, nil
 }
 
 func (c *slackClient) mapError(err error) error {

@@ -135,6 +135,21 @@ func main() {
 		handler.GetUserProfiles,
 	)
 
+	// Add search_users_by_name tool
+	s.AddTool(
+		mcp.NewTool("search_users_by_name",
+			mcp.WithDescription("Search users by display name"),
+			mcp.WithString("display_name",
+				mcp.Required(),
+				mcp.Description("The display name to search for (exact match, case sensitive)"),
+			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
+		),
+		handler.SearchUsersByName,
+	)
+
 	if err := server.ServeStdio(s); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)

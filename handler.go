@@ -47,7 +47,8 @@ type SearchPagination struct {
 
 // Handler struct implements the MCP handler
 type Handler struct {
-	slackClient SlackClient
+	slackClient    SlackClient
+	userRepository *UserRepository
 }
 
 // NewHandler creates a new handler with Slack client
@@ -57,8 +58,10 @@ func NewHandler() *Handler {
 		panic("SLACK_USER_TOKEN environment variable is not set")
 	}
 
+	slackClient := NewSlackClient(userToken)
 	return &Handler{
-		slackClient: NewSlackClient(userToken),
+		slackClient:    slackClient,
+		userRepository: NewUserRepository(slackClient),
 	}
 }
 
@@ -449,4 +452,35 @@ func (h *Handler) getUserProfile(userID string) UserProfile {
 		RealName:    slackProfile.RealName,
 		Email:       slackProfile.Email,
 	}
+}
+
+// SearchUsersByName searches for users by display name
+func (h *Handler) SearchUsersByName(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	displayName := request.GetString("display_name", "")
+	if displayName == "" {
+		return mcp.NewToolResultError("display_name is required"), nil
+	}
+
+	users, err := h.userRepository.FindByDisplayName(ctx, displayName)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	// Convert slack.User to UserProfile
+	var profiles []UserProfile
+	for _, user := range users {
+		profiles = append(profiles, UserProfile{
+			UserID:      user.ID,
+			DisplayName: user.Profile.DisplayName,
+			RealName:    user.Profile.RealName,
+			Email:       user.Profile.Email,
+		})
+	}
+
+	jsonData, err := json.Marshal(profiles)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+	}
+
+	return mcp.NewToolResultText(string(jsonData)), nil
 }
