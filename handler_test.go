@@ -184,6 +184,163 @@ func TestHandler_SearchMessages(t *testing.T) {
 	})
 }
 
+func TestHandler_GetThreadReplies(t *testing.T) {
+	t.Run("can get thread replies with messages", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		messages := []slack.Message{
+			{
+				Msg: slack.Msg{
+					User:       "U1234567",
+					Text:       "Original message",
+					Timestamp:  "1234567890.123456",
+					ReplyCount: 2,
+					ReplyUsers: []string{"U2345678", "U3456789"},
+				},
+			},
+			{
+				Msg: slack.Msg{
+					User:      "U2345678",
+					Text:      "Reply message 1",
+					Timestamp: "1234567891.123456",
+				},
+			},
+			{
+				Msg: slack.Msg{
+					User:      "U3456789",
+					Text:      "Reply message 2",
+					Timestamp: "1234567892.123456",
+					Reactions: []slack.ItemReaction{
+						{
+							Name:  "thumbsup",
+							Count: 2,
+							Users: []string{"U1234567", "U2345678"},
+						},
+					},
+				},
+			},
+		}
+		hasMore := false
+		nextCursor := ""
+
+		expectedParams := &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     50,
+		}
+
+		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_thread_replies",
+				Arguments: map[string]interface{}{
+					"channel_id": "C1234567",
+					"thread_ts":  "1234567890.123456",
+					"limit":      50,
+				},
+			},
+		}
+
+		res, err := handler.GetThreadReplies(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Contains(t, response, "messages")
+		messages_response := response["messages"].([]interface{})
+		assert.Equal(t, 3, len(messages_response))
+
+		firstMsg := messages_response[0].(map[string]interface{})
+		assert.Equal(t, "U1234567", firstMsg["user"])
+		assert.Equal(t, "Original message", firstMsg["text"])
+		assert.Equal(t, "1234567890.123456", firstMsg["ts"])
+		assert.Equal(t, float64(2), firstMsg["reply_count"])
+		assert.Equal(t, []interface{}{"U2345678", "U3456789"}, firstMsg["reply_users"])
+
+		secondMsg := messages_response[1].(map[string]interface{})
+		assert.Equal(t, "U2345678", secondMsg["user"])
+		assert.Equal(t, "Reply message 1", secondMsg["text"])
+		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
+
+		thirdMsg := messages_response[2].(map[string]interface{})
+		assert.Equal(t, "U3456789", thirdMsg["user"])
+		assert.Equal(t, "Reply message 2", thirdMsg["text"])
+		assert.Contains(t, thirdMsg, "reactions")
+		reactions := thirdMsg["reactions"].([]interface{})
+		assert.Equal(t, 1, len(reactions))
+
+		reaction := reactions[0].(map[string]interface{})
+		assert.Equal(t, "thumbsup", reaction["name"])
+		assert.Equal(t, float64(2), reaction["count"])
+
+		assert.Equal(t, false, response["has_more"])
+		assert.NotContains(t, response, "next_cursor")
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns empty when no replies found", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		messages := []slack.Message{}
+		hasMore := false
+		nextCursor := ""
+
+		expectedParams := &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     100,
+		}
+
+		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_thread_replies",
+				Arguments: map[string]interface{}{
+					"channel_id": "C1234567",
+					"thread_ts":  "1234567890.123456",
+				},
+			},
+		}
+
+		res, err := handler.GetThreadReplies(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Contains(t, response, "messages")
+		messages_response := response["messages"].([]interface{})
+		assert.Equal(t, 0, len(messages_response))
+
+		assert.Equal(t, false, response["has_more"])
+		assert.NotContains(t, response, "next_cursor")
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
 func TestHandler_buildSearchParams(t *testing.T) {
 	handler := &Handler{}
 
