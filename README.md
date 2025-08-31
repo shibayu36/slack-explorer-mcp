@@ -32,6 +32,11 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
   - Parameters
     - `user_ids`: Array of user IDs (required, max 100)
 
+- Search Users by Display Name (`search_users_by_name`)
+  - Search users by their display name. Performs exact match search with case sensitivity.
+  - Parameters
+    - `display_name`: Display name to search for (required, exact match, case sensitive)
+
 ## Setup
 
 ### Getting a Slack User Token
