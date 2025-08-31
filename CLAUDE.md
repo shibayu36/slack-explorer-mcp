@@ -92,5 +92,11 @@ According to `docs/onetime/20250823-requirements-ja.md`, the following tools are
 3. **Complex logic explanation**: When complex code requires explanation to understand the intended behavior
 4. **Large code section separation**: For 100+ line code blocks where sectioning with explanatory comments is beneficial
 
+## Documentation Guidelines
+
+### Documentation Update Process
+- Always update README_ja.md first when adding or updating documentation
+- Then update README.md with English translation using simple, clear English that non-native speakers can easily understand
+
 ## Creating Pull Request
 Use `.github/pull_request_template.md` to create pull request.
