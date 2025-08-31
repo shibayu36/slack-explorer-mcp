@@ -33,9 +33,10 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
     - `user_ids`: Array of user IDs (required, max 100)
 
 - Search Users by Display Name (`search_users_by_name`)
-  - Search users by their display name. Performs exact match search with case sensitivity.
+  - Search users by their display name. Supports both exact match and partial match search with case sensitivity.
   - Parameters
-    - `display_name`: Display name to search for (required, exact match, case sensitive)
+    - `display_name`: Display name to search for (required)
+    - `exact`: Enable exact match search
 
 ## Setup
 
