@@ -10,6 +10,121 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHandler_SearchMessages(t *testing.T) {
+	t.Run("can search messages with parameters", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockResponse := &slack.SearchMessages{
+			Matches: []slack.SearchMessage{
+				{
+					Type:      "message",
+					User:      "U1234567",
+					Username:  "john",
+					Text:      "This is a test message",
+					Timestamp: "1234567890.123456",
+					Permalink: "https://workspace.slack.com/archives/C1234567/p1234567890123456",
+					Channel: slack.CtxChannel{
+						ID:   "C1234567",
+						Name: "general",
+					},
+				},
+				{
+					Type:      "message",
+					User:      "U2345678",
+					Username:  "jane",
+					Text:      "Another test message",
+					Timestamp: "1234567891.123456",
+					Permalink: "https://workspace.slack.com/archives/C1234567/p1234567891123456?thread_ts=1234567890.123456",
+					Channel: slack.CtxChannel{
+						ID:   "C1234567",
+						Name: "general",
+					},
+				},
+			},
+			Paging: slack.Paging{
+				Count: 50,
+				Total: 100,
+				Page:  2,
+				Pages: 2,
+			},
+			Total: 100,
+		}
+
+		expectedQuery := "test message in:general from:<@U1234567>"
+		expectedParams := slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "asc",
+			Highlight:     true,
+			Count:         50,
+			Page:          2,
+		}
+		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_messages",
+				Arguments: map[string]interface{}{
+					"query":      "test message",
+					"in_channel": "general",
+					"from_user":  "U1234567",
+					"highlight":  true,
+					"sort":       "timestamp",
+					"sort_dir":   "asc",
+					"count":      50,
+					"page":       2,
+				},
+			},
+		}
+
+		res, err := handler.SearchMessages(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Contains(t, response, "messages")
+		messages := response["messages"].(map[string]interface{})
+
+		assert.Contains(t, messages, "matches")
+		matches := messages["matches"].([]interface{})
+		assert.Equal(t, 2, len(matches))
+
+		firstMsg := matches[0].(map[string]interface{})
+		assert.Equal(t, "U1234567", firstMsg["user"])
+		assert.Equal(t, "This is a test message", firstMsg["text"])
+		assert.Equal(t, "1234567890.123456", firstMsg["ts"])
+		assert.Nil(t, firstMsg["thread_ts"])
+
+		channel1 := firstMsg["channel"].(map[string]interface{})
+		assert.Equal(t, "C1234567", channel1["id"])
+		assert.Equal(t, "general", channel1["name"])
+
+		secondMsg := matches[1].(map[string]interface{})
+		assert.Equal(t, "U2345678", secondMsg["user"])
+		assert.Equal(t, "Another test message", secondMsg["text"])
+		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
+		assert.Equal(t, "1234567890.123456", secondMsg["thread_ts"])
+
+		assert.Contains(t, messages, "pagination")
+		pagination := messages["pagination"].(map[string]interface{})
+		assert.Equal(t, float64(100), pagination["total_count"])
+		assert.Equal(t, float64(2), pagination["page"])
+		assert.Equal(t, float64(2), pagination["page_count"])
+		assert.Equal(t, float64(50), pagination["per_page"])
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
 func TestHandler_buildSearchParams(t *testing.T) {
 	handler := &Handler{}
 
