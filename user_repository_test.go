@@ -8,7 +8,7 @@ import (
 )
 
 func TestUserRepository_FindByDisplayName(t *testing.T) {
-	t.Run("returns users when display name matches", func(t *testing.T) {
+	t.Run("returns users when display name matches exactly", func(t *testing.T) {
 		mockClient := &SlackClientMock{}
 		users := []slack.User{
 			{
@@ -32,12 +32,60 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		repo := NewUserRepository(mockClient)
 
-		result, err := repo.FindByDisplayName(t.Context(), "John Doe")
+		result, err := repo.FindByDisplayName(t.Context(), "John Doe", true)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 1)
 		assert.Equal(t, "U1234567", result[0].ID)
 		assert.Equal(t, "John Doe", result[0].Profile.DisplayName)
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns users with partial match when exact is false", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+		users := []slack.User{
+			{
+				ID: "U1234567",
+				Profile: slack.UserProfile{
+					DisplayName: "John Doe",
+					RealName:    "John Doe",
+					Email:       "john@example.com",
+				},
+			},
+			{
+				ID: "U2345678",
+				Profile: slack.UserProfile{
+					DisplayName: "Anne Smith",
+					RealName:    "Anne Smith",
+					Email:       "anne@example.com",
+				},
+			},
+			{
+				ID: "U3456789",
+				Profile: slack.UserProfile{
+					DisplayName: "Jane Johnson",
+					RealName:    "Jane Johnson",
+					Email:       "jane@example.com",
+				},
+			},
+		}
+		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
+
+		repo := NewUserRepository(mockClient)
+
+		// Search for "John" should match John Doe and Jane Johnson
+		result, err := repo.FindByDisplayName(t.Context(), "John", false)
+
+		assert.NoError(t, err)
+		assert.Len(t, result, 2)
+
+		foundUsers := make(map[string]bool)
+		for _, user := range result {
+			foundUsers[user.ID] = true
+		}
+		assert.True(t, foundUsers["U1234567"]) // John Doe
+		assert.True(t, foundUsers["U3456789"]) // Jane Johnson
+
 		mockClient.AssertExpectations(t)
 	})
 
@@ -58,12 +106,12 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		repo := NewUserRepository(mockClient)
 
 		// First call - should call API
-		result1, err1 := repo.FindByDisplayName(t.Context(), "John Doe")
+		result1, err1 := repo.FindByDisplayName(t.Context(), "John Doe", true)
 		assert.NoError(t, err1)
 		assert.Len(t, result1, 1)
 
 		// Second call - should use cache, not call API again
-		result2, err2 := repo.FindByDisplayName(t.Context(), "John Doe")
+		result2, err2 := repo.FindByDisplayName(t.Context(), "John Doe", true)
 		assert.NoError(t, err2)
 		assert.Len(t, result2, 1)
 		assert.Equal(t, result1[0].ID, result2[0].ID)
@@ -87,7 +135,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		repo := NewUserRepository(mockClient)
 
-		result, err := repo.FindByDisplayName(t.Context(), "Not Found User")
+		result, err := repo.FindByDisplayName(t.Context(), "Not Found User", true)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"github.com/slack-go/slack"
 )
@@ -19,8 +20,8 @@ func NewUserRepository(client SlackClient) *UserRepository {
 	}
 }
 
-// FindByDisplayName searches for users by display name (exact match)
-func (r *UserRepository) FindByDisplayName(ctx context.Context, displayName string) ([]slack.User, error) {
+// FindByDisplayName searches for users by display name
+func (r *UserRepository) FindByDisplayName(ctx context.Context, displayName string, exact bool) ([]slack.User, error) {
 	// Load users if not cached yet
 	if r.cachedUsers == nil {
 		users, err := r.client.GetUsers(ctx)
@@ -33,8 +34,14 @@ func (r *UserRepository) FindByDisplayName(ctx context.Context, displayName stri
 	// Search for users with matching display name
 	var matches []slack.User
 	for _, user := range r.cachedUsers {
-		if user.Profile.DisplayName == displayName {
-			matches = append(matches, user)
+		if exact {
+			if user.Profile.DisplayName == displayName {
+				matches = append(matches, user)
+			}
+		} else {
+			if strings.Contains(user.Profile.DisplayName, displayName) {
+				matches = append(matches, user)
+			}
 		}
 	}
 
