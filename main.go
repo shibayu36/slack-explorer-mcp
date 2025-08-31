@@ -162,22 +162,27 @@ func main() {
 	}
 }
 
-// setupLogging configures slog based on LOG_LEVEL environment variable
+// setupLogging configures slog based on DEBUG or LOG_LEVEL environment variable
 func setupLogging() {
-	logLevel := strings.ToUpper(os.Getenv("LOG_LEVEL"))
-	var level slog.Level
+	var level slog.Level = slog.LevelInfo // Default to INFO level
 
-	switch logLevel {
-	case "DEBUG":
+	// Check DEBUG=1 first
+	if os.Getenv("DEBUG") == "1" {
 		level = slog.LevelDebug
-	case "INFO":
-		level = slog.LevelInfo
-	case "WARN":
-		level = slog.LevelWarn
-	case "ERROR":
-		level = slog.LevelError
-	default:
-		level = slog.LevelInfo // Default to INFO level
+	}
+
+	// LOG_LEVEL takes precedence if set
+	if logLevel := strings.ToUpper(os.Getenv("LOG_LEVEL")); logLevel != "" {
+		switch logLevel {
+		case "DEBUG":
+			level = slog.LevelDebug
+		case "INFO":
+			level = slog.LevelInfo
+		case "WARN":
+			level = slog.LevelWarn
+		case "ERROR":
+			level = slog.LevelError
+		}
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
