@@ -460,8 +460,9 @@ func (h *Handler) SearchUsersByName(ctx context.Context, request mcp.CallToolReq
 	if displayName == "" {
 		return mcp.NewToolResultError("display_name is required"), nil
 	}
+	exact := request.GetBool("exact", true)
 
-	users, err := h.userRepository.FindByDisplayName(ctx, displayName)
+	users, err := h.userRepository.FindByDisplayName(ctx, displayName, exact)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}

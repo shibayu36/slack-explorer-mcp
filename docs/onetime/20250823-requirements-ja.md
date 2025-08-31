@@ -201,7 +201,8 @@
 #### 入力パラメータ
 ```json
 {
-  "display_name": "string (required)"     // 検索する表示名（完全一致、大文字小文字区別）
+  "display_name": "string (required)",    // 検索する表示名
+  "exact": "boolean (optional)"           // 完全一致検索（デフォルト: true）。falseの場合は部分一致検索
 }
 ```
 
@@ -218,14 +219,17 @@
 ```
 
 #### 実装上の注意点
-- `display_name`は必須パラメータで、完全一致検索を行う（大文字小文字を区別）
+- `display_name`は必須パラメータで、検索対象の表示名を指定
+- `exact`パラメータ（オプション）:
+  - `true`（デフォルト）: 完全一致検索（大文字小文字を区別）
+  - `false`: 部分一致検索（大文字小文字を区別）
 - Slack APIの`users.list`を使用して全ユーザーを取得
-- `profile.display_name`が検索文字列と完全一致するユーザーをフィルタリング
+- `profile.display_name`でフィルタリング
 - 既存の`UserProfile`型の配列を返す（`error`フィールドは使用しない）
 - User Token（xoxp）を使用し、`users.list` APIを呼び出す
 - ユーザーが見つからない場合は空配列`[]`を返す（エラーではない）
 - 必要スコープ: `users:read`
-- 将来の拡張予定: `real_name`検索、部分一致オプション、大文字小文字無視オプション
+- 将来の拡張予定: `real_name`検索、大文字小文字無視オプション
 
 ※ 他のツールの入力・出力詳細は後続実装時に定義
 
