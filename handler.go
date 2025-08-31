@@ -227,6 +227,23 @@ func extractThreadTsFromPermalink(permalink string) string {
 	return ""
 }
 
+// extractWorkspaceURLFromPermalink extracts workspace URL from Slack permalink
+func extractWorkspaceURLFromPermalink(permalink string) string {
+	// Extract workspace URL from permalink pattern like:
+	// https://workspace.slack.com/archives/C123/p1234567890123456
+	// Returns: https://workspace.slack.com
+	if permalink == "" {
+		return ""
+	}
+
+	re := regexp.MustCompile(`^(https?://[^/]+\.slack\.com)`)
+	matches := re.FindStringSubmatch(permalink)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
+}
+
 // convertToSearchResponse converts Slack API response to our response format
 func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchMessagesResponse {
 	response := &SearchMessagesResponse{

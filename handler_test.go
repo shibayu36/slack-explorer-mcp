@@ -219,12 +219,12 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 	}{
 		{
 			name:      "Valid permalink with thread_ts",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
 			expected:  "1755823401.732729",
 		},
 		{
 			name:      "Permalink without thread_ts",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329",
 			expected:  "",
 		},
 		{
@@ -234,7 +234,7 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 		},
 		{
 			name:      "Permalink with thread_ts using & separator",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?foo=bar&thread_ts=1755823401.732729",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329?foo=bar&thread_ts=1755823401.732729",
 			expected:  "1755823401.732729",
 		},
 	}
@@ -244,6 +244,39 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 			result := extractThreadTsFromPermalink(tt.permalink)
 			if result != tt.expected {
 				t.Errorf("extractThreadTsFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestExtractWorkspaceURLFromPermalink(t *testing.T) {
+	tests := []struct {
+		name      string
+		permalink string
+		expected  string
+	}{
+		{
+			name:      "Valid Slack URL with query parameters",
+			permalink: "https://workspace.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
+			expected:  "https://workspace.slack.com",
+		},
+		{
+			name:      "Valid Slack URL with subdomain",
+			permalink: "https://my-company.slack.com/archives/C092E73H1A9/p1755857531080329",
+			expected:  "https://my-company.slack.com",
+		},
+		{
+			name:      "Empty permalink",
+			permalink: "",
+			expected:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractWorkspaceURLFromPermalink(tt.permalink)
+			if result != tt.expected {
+				t.Errorf("extractWorkspaceURLFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
 			}
 		})
 	}
