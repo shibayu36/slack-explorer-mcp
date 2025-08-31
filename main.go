@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
+	"os"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -11,6 +14,9 @@ import (
 const Version = "0.3.0"
 
 func main() {
+	// Set up logging based on LOG_LEVEL environment variable
+	setupLogging()
+
 	// Initialize handler
 	handler := NewHandler()
 
@@ -154,4 +160,28 @@ func main() {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)
 	}
+}
+
+// setupLogging configures slog based on LOG_LEVEL environment variable
+func setupLogging() {
+	logLevel := strings.ToUpper(os.Getenv("LOG_LEVEL"))
+	var level slog.Level
+
+	switch logLevel {
+	case "DEBUG":
+		level = slog.LevelDebug
+	case "INFO":
+		level = slog.LevelInfo
+	case "WARN":
+		level = slog.LevelWarn
+	case "ERROR":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo // Default to INFO level
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: level,
+	}))
+	slog.SetDefault(logger)
 }

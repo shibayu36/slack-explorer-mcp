@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/slack-go/slack"
 )
@@ -28,40 +29,76 @@ func NewSlackClient(userToken string) SlackClient {
 
 // SearchMessages searches for messages in Slack workspace
 func (c *slackClient) SearchMessages(query string, params slack.SearchParameters) (*slack.SearchMessages, error) {
+	slog.Debug("Calling Slack API: SearchMessages",
+		"query", query,
+		"params", params,
+	)
 	messages, err := c.client.SearchMessages(query, params)
 	if err != nil {
+		slog.Debug("SearchMessages failed", "error", err)
 		return nil, c.mapError(err)
 	}
+	slog.Debug("SearchMessages completed",
+		"total_count", messages.Total,
+	)
 	return messages, nil
 }
 
 // GetConversationReplies retrieves replies to a message thread
 func (c *slackClient) GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error) {
+	slog.Debug("Calling Slack API: GetConversationReplies",
+		"channel_id", params.ChannelID,
+		"thread_ts", params.Timestamp,
+		"limit", params.Limit,
+		"cursor", params.Cursor,
+	)
 	messages, hasMore, nextCursor, err := c.client.GetConversationReplies(params)
 	if err != nil {
+		slog.Debug("GetConversationReplies failed", "error", err)
 		return nil, false, "", c.mapError(err)
 	}
+	slog.Debug("GetConversationReplies completed",
+		"messages_count", len(messages),
+		"has_more", hasMore,
+		"next_cursor", nextCursor,
+	)
 	return messages, hasMore, nextCursor, nil
 }
 
 // GetUserProfile retrieves a user's profile information
 func (c *slackClient) GetUserProfile(userID string) (*slack.UserProfile, error) {
+	slog.Debug("Calling Slack API: GetUserProfile",
+		"user_id", userID,
+	)
 	profile, err := c.client.GetUserProfile(&slack.GetUserProfileParameters{
 		UserID: userID,
 	})
 	if err != nil {
+		slog.Debug("GetUserProfile failed", "error", err)
 		return nil, c.mapError(err)
 	}
+	slog.Debug("GetUserProfile completed",
+		"user_id", userID,
+		"display_name", profile.DisplayName,
+		"real_name", profile.RealName,
+	)
 	return profile, nil
 }
 
 // GetUsers retrieves users from the workspace
 // The slack-go library handles pagination internally when using GetUsersContext
 func (c *slackClient) GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error) {
+	slog.Debug("Calling Slack API: GetUsers",
+		"options_count", len(options),
+	)
 	users, err := c.client.GetUsersContext(ctx, options...)
 	if err != nil {
+		slog.Debug("GetUsers failed", "error", err)
 		return nil, c.mapError(err)
 	}
+	slog.Debug("GetUsers completed",
+		"users_count", len(users),
+	)
 	return users, nil
 }
 
