@@ -10,6 +10,337 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestHandler_SearchMessages(t *testing.T) {
+	t.Run("can search messages with parameters", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockResponse := &slack.SearchMessages{
+			Matches: []slack.SearchMessage{
+				{
+					Type:      "message",
+					User:      "U1234567",
+					Username:  "john",
+					Text:      "This is a test message",
+					Timestamp: "1234567890.123456",
+					Permalink: "https://workspace.slack.com/archives/C1234567/p1234567890123456",
+					Channel: slack.CtxChannel{
+						ID:   "C1234567",
+						Name: "general",
+					},
+				},
+				{
+					Type:      "message",
+					User:      "U2345678",
+					Username:  "jane",
+					Text:      "Another test message",
+					Timestamp: "1234567891.123456",
+					Permalink: "https://workspace.slack.com/archives/C1234567/p1234567891123456?thread_ts=1234567890.123456",
+					Channel: slack.CtxChannel{
+						ID:   "C1234567",
+						Name: "general",
+					},
+				},
+			},
+			Paging: slack.Paging{
+				Count: 50,
+				Total: 100,
+				Page:  2,
+				Pages: 2,
+			},
+			Total: 100,
+		}
+
+		expectedQuery := "test message in:general from:<@U1234567>"
+		expectedParams := slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "asc",
+			Highlight:     true,
+			Count:         50,
+			Page:          2,
+		}
+		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_messages",
+				Arguments: map[string]interface{}{
+					"query":      "test message",
+					"in_channel": "general",
+					"from_user":  "U1234567",
+					"highlight":  true,
+					"sort":       "timestamp",
+					"sort_dir":   "asc",
+					"count":      50,
+					"page":       2,
+				},
+			},
+		}
+
+		res, err := handler.SearchMessages(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "https://workspace.slack.com", response["workspace_url"])
+		assert.Contains(t, response, "messages")
+		messages := response["messages"].(map[string]interface{})
+
+		assert.Contains(t, messages, "matches")
+		matches := messages["matches"].([]interface{})
+		assert.Equal(t, 2, len(matches))
+
+		firstMsg := matches[0].(map[string]interface{})
+		assert.Equal(t, "U1234567", firstMsg["user"])
+		assert.Equal(t, "This is a test message", firstMsg["text"])
+		assert.Equal(t, "1234567890.123456", firstMsg["ts"])
+		assert.Nil(t, firstMsg["thread_ts"])
+
+		channel1 := firstMsg["channel"].(map[string]interface{})
+		assert.Equal(t, "C1234567", channel1["id"])
+		assert.Equal(t, "general", channel1["name"])
+
+		secondMsg := matches[1].(map[string]interface{})
+		assert.Equal(t, "U2345678", secondMsg["user"])
+		assert.Equal(t, "Another test message", secondMsg["text"])
+		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
+		assert.Equal(t, "1234567890.123456", secondMsg["thread_ts"])
+
+		assert.Contains(t, messages, "pagination")
+		pagination := messages["pagination"].(map[string]interface{})
+		assert.Equal(t, float64(100), pagination["total_count"])
+		assert.Equal(t, float64(2), pagination["page"])
+		assert.Equal(t, float64(2), pagination["page_count"])
+		assert.Equal(t, float64(50), pagination["per_page"])
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns empty when no messages found", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		expectedQuery := "nonexistent query"
+		expectedParams := slack.SearchParameters{
+			Sort:          "score",
+			SortDirection: "desc",
+			Highlight:     false,
+			Count:         20,
+			Page:          1,
+		}
+
+		mockResponse := &slack.SearchMessages{
+			Matches: []slack.SearchMessage{},
+			Paging: slack.Paging{
+				Count: 0,
+				Total: 0,
+				Page:  1,
+				Pages: 0,
+			},
+			Total: 0,
+		}
+
+		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_messages",
+				Arguments: map[string]interface{}{
+					"query": "nonexistent query",
+				},
+			},
+		}
+
+		res, err := handler.SearchMessages(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "", response["workspace_url"])
+		assert.Contains(t, response, "messages")
+		messages := response["messages"].(map[string]interface{})
+		matches := messages["matches"].([]interface{})
+		assert.Equal(t, 0, len(matches))
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestHandler_GetThreadReplies(t *testing.T) {
+	t.Run("can get thread replies with messages", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		messages := []slack.Message{
+			{
+				Msg: slack.Msg{
+					User:       "U1234567",
+					Text:       "Original message",
+					Timestamp:  "1234567890.123456",
+					ReplyCount: 2,
+					ReplyUsers: []string{"U2345678", "U3456789"},
+				},
+			},
+			{
+				Msg: slack.Msg{
+					User:      "U2345678",
+					Text:      "Reply message 1",
+					Timestamp: "1234567891.123456",
+				},
+			},
+			{
+				Msg: slack.Msg{
+					User:      "U3456789",
+					Text:      "Reply message 2",
+					Timestamp: "1234567892.123456",
+					Reactions: []slack.ItemReaction{
+						{
+							Name:  "thumbsup",
+							Count: 2,
+							Users: []string{"U1234567", "U2345678"},
+						},
+					},
+				},
+			},
+		}
+		hasMore := false
+		nextCursor := ""
+
+		expectedParams := &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     50,
+		}
+
+		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_thread_replies",
+				Arguments: map[string]interface{}{
+					"channel_id": "C1234567",
+					"thread_ts":  "1234567890.123456",
+					"limit":      50,
+				},
+			},
+		}
+
+		res, err := handler.GetThreadReplies(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Contains(t, response, "messages")
+		messages_response := response["messages"].([]interface{})
+		assert.Equal(t, 3, len(messages_response))
+
+		firstMsg := messages_response[0].(map[string]interface{})
+		assert.Equal(t, "U1234567", firstMsg["user"])
+		assert.Equal(t, "Original message", firstMsg["text"])
+		assert.Equal(t, "1234567890.123456", firstMsg["ts"])
+		assert.Equal(t, float64(2), firstMsg["reply_count"])
+		assert.Equal(t, []interface{}{"U2345678", "U3456789"}, firstMsg["reply_users"])
+
+		secondMsg := messages_response[1].(map[string]interface{})
+		assert.Equal(t, "U2345678", secondMsg["user"])
+		assert.Equal(t, "Reply message 1", secondMsg["text"])
+		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
+
+		thirdMsg := messages_response[2].(map[string]interface{})
+		assert.Equal(t, "U3456789", thirdMsg["user"])
+		assert.Equal(t, "Reply message 2", thirdMsg["text"])
+		assert.Contains(t, thirdMsg, "reactions")
+		reactions := thirdMsg["reactions"].([]interface{})
+		assert.Equal(t, 1, len(reactions))
+
+		reaction := reactions[0].(map[string]interface{})
+		assert.Equal(t, "thumbsup", reaction["name"])
+		assert.Equal(t, float64(2), reaction["count"])
+
+		assert.Equal(t, false, response["has_more"])
+		assert.NotContains(t, response, "next_cursor")
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns empty when no replies found", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		messages := []slack.Message{}
+		hasMore := false
+		nextCursor := ""
+
+		expectedParams := &slack.GetConversationRepliesParameters{
+			ChannelID: "C1234567",
+			Timestamp: "1234567890.123456",
+			Limit:     100,
+		}
+
+		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
+
+		handler := &Handler{
+			slackClient: mockClient,
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_thread_replies",
+				Arguments: map[string]interface{}{
+					"channel_id": "C1234567",
+					"thread_ts":  "1234567890.123456",
+				},
+			},
+		}
+
+		res, err := handler.GetThreadReplies(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Contains(t, response, "messages")
+		messages_response := response["messages"].([]interface{})
+		assert.Equal(t, 0, len(messages_response))
+
+		assert.Equal(t, false, response["has_more"])
+		assert.NotContains(t, response, "next_cursor")
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
 func TestHandler_buildSearchParams(t *testing.T) {
 	handler := &Handler{}
 
@@ -211,7 +542,8 @@ func TestHandler_buildSearchParams(t *testing.T) {
 	})
 }
 
-func TestExtractThreadTsFromPermalink(t *testing.T) {
+func TestHandler_ExtractThreadTsFromPermalink(t *testing.T) {
+	handler := &Handler{}
 	tests := []struct {
 		name      string
 		permalink string
@@ -219,12 +551,12 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 	}{
 		{
 			name:      "Valid permalink with thread_ts",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
 			expected:  "1755823401.732729",
 		},
 		{
 			name:      "Permalink without thread_ts",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329",
 			expected:  "",
 		},
 		{
@@ -234,17 +566,47 @@ func TestExtractThreadTsFromPermalink(t *testing.T) {
 		},
 		{
 			name:      "Permalink with thread_ts using & separator",
-			permalink: "https://clustervr.slack.com/archives/C092E73H1A9/p1755857531080329?foo=bar&thread_ts=1755823401.732729",
+			permalink: "https://workspace1.slack.com/archives/C092E73H1A9/p1755857531080329?foo=bar&thread_ts=1755823401.732729",
 			expected:  "1755823401.732729",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := extractThreadTsFromPermalink(tt.permalink)
-			if result != tt.expected {
-				t.Errorf("extractThreadTsFromPermalink(%q) = %q, expected %q", tt.permalink, result, tt.expected)
-			}
+			result := handler.extractThreadTsFromPermalink(tt.permalink)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHandler_ExtractWorkspaceURLFromPermalink(t *testing.T) {
+	handler := &Handler{}
+	tests := []struct {
+		name      string
+		permalink string
+		expected  string
+	}{
+		{
+			name:      "Valid Slack URL with query parameters",
+			permalink: "https://workspace.slack.com/archives/C092E73H1A9/p1755857531080329?thread_ts=1755823401.732729",
+			expected:  "https://workspace.slack.com",
+		},
+		{
+			name:      "Valid Slack URL with subdomain",
+			permalink: "https://my-company.slack.com/archives/C092E73H1A9/p1755857531080329",
+			expected:  "https://my-company.slack.com",
+		},
+		{
+			name:      "Empty permalink",
+			permalink: "",
+			expected:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := handler.extractWorkspaceURLFromPermalink(tt.permalink)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

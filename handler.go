@@ -14,7 +14,8 @@ import (
 
 // SearchMessagesResponse represents the output for search_messages tool
 type SearchMessagesResponse struct {
-	Messages *SearchMessagesMatches `json:"messages"`
+	WorkspaceURL string                 `json:"workspace_url"`
+	Messages     *SearchMessagesMatches `json:"messages"`
 }
 
 type SearchMessagesMatches struct {
@@ -216,7 +217,7 @@ func (h *Handler) buildSearchParams(request buildSearchParamsRequest) (string, s
 }
 
 // extractThreadTsFromPermalink extracts thread_ts from Slack permalink URL
-func extractThreadTsFromPermalink(permalink string) string {
+func (h *Handler) extractThreadTsFromPermalink(permalink string) string {
 	// Extract thread_ts from URL pattern like:
 	// https://workspace.slack.com/archives/C123/p1234567890123456?thread_ts=1234567890.123456
 	re := regexp.MustCompile(`[?&]thread_ts=([0-9.]+)`)
@@ -227,12 +228,34 @@ func extractThreadTsFromPermalink(permalink string) string {
 	return ""
 }
 
+// extractWorkspaceURLFromPermalink extracts workspace URL from Slack permalink
+func (h *Handler) extractWorkspaceURLFromPermalink(permalink string) string {
+	// Extract workspace URL from permalink pattern like:
+	// https://workspace.slack.com/archives/C123/p1234567890123456
+	// Returns: https://workspace.slack.com
+	if permalink == "" {
+		return ""
+	}
+
+	re := regexp.MustCompile(`^(https?://[^/]+\.slack\.com)`)
+	matches := re.FindStringSubmatch(permalink)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
+}
+
 // convertToSearchResponse converts Slack API response to our response format
 func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchMessagesResponse {
 	response := &SearchMessagesResponse{
+		WorkspaceURL: "",
 		Messages: &SearchMessagesMatches{
 			Matches: make([]SearchMessage, 0, len(result.Matches)),
 		},
+	}
+
+	if len(result.Matches) > 0 {
+		response.WorkspaceURL = h.extractWorkspaceURLFromPermalink(result.Matches[0].Permalink)
 	}
 
 	for _, match := range result.Matches {
@@ -240,7 +263,7 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 			User:      match.User,
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
-			ThreadTs:  extractThreadTsFromPermalink(match.Permalink),
+			ThreadTs:  h.extractThreadTsFromPermalink(match.Permalink),
 		}
 
 		if match.Channel.ID != "" {
