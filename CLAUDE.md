@@ -69,6 +69,9 @@ According to `docs/onetime/20250823-requirements-ja.md`, the following tools are
 2. Implement the handler method in `handler.go`
 3. Follow the existing pattern: extract parameters, perform Slack API call, return formatted result
 
+### Testing Guidelines
+When creating tests, always consult with the user about the test case list before implementation. Present a list of test cases you plan to implement and get confirmation that it covers the necessary scenarios.
+
 ### Error Handling
 - Use `mcp.NewToolResultError()` for error responses
 - Map Slack API errors appropriately (auth errors, not found, rate limits, etc.)
