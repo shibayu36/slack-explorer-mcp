@@ -3,18 +3,27 @@ package main
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"github.com/slack-go/slack"
 )
 
-// UserRepository manages user information with caching
+// SessionCache holds cached users for a specific session
+type SessionCache struct {
+	users []slack.User
+}
+
+// UserRepository manages user information with session-based caching
 type UserRepository struct {
-	cachedUsers []slack.User
+	sessionCaches map[SessionID]*SessionCache
+	mu            sync.RWMutex
 }
 
 // NewUserRepository creates a new UserRepository
 func NewUserRepository() *UserRepository {
-	return &UserRepository{}
+	return &UserRepository{
+		sessionCaches: make(map[SessionID]*SessionCache),
+	}
 }
 
 // FindByDisplayName searches for users by display name
@@ -24,18 +33,33 @@ func (r *UserRepository) FindByDisplayName(
 	displayName string,
 	exact bool,
 ) ([]slack.User, error) {
-	// Load users if not cached yet
-	if r.cachedUsers == nil {
-		users, err := client.GetUsers(ctx)
-		if err != nil {
-			return nil, err
-		}
-		r.cachedUsers = users
+	sessionID := SessionIDFromContext(ctx)
+
+	r.mu.RLock()
+	cache, exists := r.sessionCaches[sessionID]
+	r.mu.RUnlock()
+
+	if exists && cache != nil {
+		return r.searchInUsers(cache.users, displayName, exact), nil
 	}
 
-	// Search for users with matching display name
+	users, err := client.GetUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	r.mu.Lock()
+	r.sessionCaches[sessionID] = &SessionCache{
+		users: users,
+	}
+	r.mu.Unlock()
+
+	return r.searchInUsers(users, displayName, exact), nil
+}
+
+func (r *UserRepository) searchInUsers(users []slack.User, displayName string, exact bool) []slack.User {
 	var matches []slack.User
-	for _, user := range r.cachedUsers {
+	for _, user := range users {
 		if exact {
 			if user.Profile.DisplayName == displayName {
 				matches = append(matches, user)
@@ -46,6 +70,5 @@ func (r *UserRepository) FindByDisplayName(
 			}
 		}
 	}
-
-	return matches, nil
+	return matches
 }
