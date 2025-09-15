@@ -9,6 +9,12 @@ import (
 // slackUserTokenKey is the context key for Slack user token
 type slackUserTokenKey struct{}
 
+// sessionIDKey is the context key for session ID
+type sessionIDKey struct{}
+
+// SessionID represents a unique session identifier
+type SessionID string
+
 // SlackUserTokenFromContext retrieves Slack user token from context
 func SlackUserTokenFromContext(ctx context.Context) (string, error) {
 	token, ok := ctx.Value(slackUserTokenKey{}).(string)
@@ -30,4 +36,17 @@ func WithSlackTokenFromEnv(ctx context.Context) context.Context {
 
 func withSlackUserToken(ctx context.Context, token string) context.Context {
 	return context.WithValue(ctx, slackUserTokenKey{}, token)
+}
+
+// WithSessionID adds session ID to context
+func WithSessionID(ctx context.Context, sessionID SessionID) context.Context {
+	return context.WithValue(ctx, sessionIDKey{}, sessionID)
+}
+
+// SessionIDFromContext retrieves session ID from context
+func SessionIDFromContext(ctx context.Context) SessionID {
+	if sessionID, ok := ctx.Value(sessionIDKey{}).(SessionID); ok {
+		return sessionID
+	}
+	return "default"
 }
