@@ -62,7 +62,7 @@ func NewHandler() *Handler {
 	slackClient := NewSlackClient(userToken)
 	return &Handler{
 		slackClient:    slackClient,
-		userRepository: NewUserRepository(slackClient),
+		userRepository: NewUserRepository(),
 	}
 }
 
@@ -485,7 +485,7 @@ func (h *Handler) SearchUsersByName(ctx context.Context, request mcp.CallToolReq
 	}
 	exact := request.GetBool("exact", true)
 
-	users, err := h.userRepository.FindByDisplayName(ctx, displayName, exact)
+	users, err := h.userRepository.FindByDisplayName(ctx, h.slackClient, displayName, exact)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}

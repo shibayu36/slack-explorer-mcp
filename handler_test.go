@@ -855,8 +855,9 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			slackClient:    mockClient,
 			userRepository: userRepo,
 		}
 
@@ -920,8 +921,9 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			slackClient:    mockClient,
 			userRepository: userRepo,
 		}
 
@@ -970,8 +972,9 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			slackClient:    mockClient,
 			userRepository: userRepo,
 		}
 
