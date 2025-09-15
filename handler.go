@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/slack-go/slack"
+)
+
+// Error messages for user-facing errors
+const (
+	ErrSlackTokenNotConfigured = "Slack user token is not configured. Please set your Slack user token."
 )
 
 // SearchMessagesResponse represents the output for search_messages tool
@@ -48,26 +52,31 @@ type SearchPagination struct {
 
 // Handler struct implements the MCP handler
 type Handler struct {
-	slackClient    SlackClient
+	getClient      func(ctx context.Context) (SlackClient, error)
 	userRepository *UserRepository
 }
 
 // NewHandler creates a new handler with Slack client
 func NewHandler() *Handler {
-	userToken := os.Getenv("SLACK_USER_TOKEN")
-	if userToken == "" {
-		panic("SLACK_USER_TOKEN environment variable is not set")
-	}
-
-	slackClient := NewSlackClient(userToken)
 	return &Handler{
-		slackClient:    slackClient,
+		getClient: func(ctx context.Context) (SlackClient, error) {
+			token, err := SlackUserTokenFromContext(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get Slack token from context: %w", err)
+			}
+			return NewSlackClient(token), nil
+		},
 		userRepository: NewUserRepository(),
 	}
 }
 
 // SearchMessages handles the search_messages tool call
 func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	client, err := h.getClient(ctx)
+	if err != nil {
+		return mcp.NewToolResultError(ErrSlackTokenNotConfigured), nil
+	}
+
 	query, params, err := h.buildSearchParams(buildSearchParamsRequest{
 		Query:     request.GetString("query", ""),
 		InChannel: request.GetString("in_channel", ""),
@@ -89,7 +98,7 @@ func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolReques
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 
-	searchResult, err := h.slackClient.SearchMessages(query, params)
+	searchResult, err := client.SearchMessages(query, params)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
@@ -312,6 +321,11 @@ type Reaction struct {
 
 // GetThreadReplies handles the get_thread_replies tool call
 func (h *Handler) GetThreadReplies(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	client, err := h.getClient(ctx)
+	if err != nil {
+		return mcp.NewToolResultError(ErrSlackTokenNotConfigured), nil
+	}
+
 	params, err := h.buildThreadRepliesParams(buildThreadRepliesRequest{
 		ChannelID: request.GetString("channel_id", ""),
 		ThreadTS:  request.GetString("thread_ts", ""),
@@ -322,7 +336,7 @@ func (h *Handler) GetThreadReplies(ctx context.Context, request mcp.CallToolRequ
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 
-	messages, hasMore, nextCursor, err := h.slackClient.GetConversationReplies(params)
+	messages, hasMore, nextCursor, err := client.GetConversationReplies(params)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
@@ -429,6 +443,11 @@ type UserProfile struct {
 }
 
 func (h *Handler) GetUserProfiles(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	client, err := h.getClient(ctx)
+	if err != nil {
+		return mcp.NewToolResultError(ErrSlackTokenNotConfigured), nil
+	}
+
 	userIDs := request.GetStringSlice("user_ids", []string{})
 
 	if len(userIDs) == 0 {
@@ -441,7 +460,7 @@ func (h *Handler) GetUserProfiles(ctx context.Context, request mcp.CallToolReque
 	var profiles []UserProfile
 
 	for _, userID := range userIDs {
-		profile := h.getUserProfile(userID)
+		profile := h.getUserProfile(client, userID)
 		profiles = append(profiles, profile)
 	}
 
@@ -453,7 +472,7 @@ func (h *Handler) GetUserProfiles(ctx context.Context, request mcp.CallToolReque
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-func (h *Handler) getUserProfile(userID string) UserProfile {
+func (h *Handler) getUserProfile(client SlackClient, userID string) UserProfile {
 	if !strings.HasPrefix(userID, "U") {
 		return UserProfile{
 			UserID: userID,
@@ -461,7 +480,7 @@ func (h *Handler) getUserProfile(userID string) UserProfile {
 		}
 	}
 
-	slackProfile, err := h.slackClient.GetUserProfile(userID)
+	slackProfile, err := client.GetUserProfile(userID)
 	if err != nil {
 		return UserProfile{
 			UserID: userID,
@@ -479,13 +498,18 @@ func (h *Handler) getUserProfile(userID string) UserProfile {
 
 // SearchUsersByName searches for users by display name
 func (h *Handler) SearchUsersByName(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	client, err := h.getClient(ctx)
+	if err != nil {
+		return mcp.NewToolResultError(ErrSlackTokenNotConfigured), nil
+	}
+
 	displayName := request.GetString("display_name", "")
 	if displayName == "" {
 		return mcp.NewToolResultError("display_name is required"), nil
 	}
 	exact := request.GetBool("exact", true)
 
-	users, err := h.userRepository.FindByDisplayName(ctx, h.slackClient, displayName, exact)
+	users, err := h.userRepository.FindByDisplayName(ctx, client, displayName, exact)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
