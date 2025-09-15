@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -61,7 +62,9 @@ func TestHandler_SearchMessages(t *testing.T) {
 		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -151,7 +154,9 @@ func TestHandler_SearchMessages(t *testing.T) {
 		mockClient.On("SearchMessages", expectedQuery, expectedParams).Return(mockResponse, nil)
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -232,7 +237,9 @@ func TestHandler_GetThreadReplies(t *testing.T) {
 		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -306,7 +313,9 @@ func TestHandler_GetThreadReplies(t *testing.T) {
 		mockClient.On("GetConversationReplies", expectedParams).Return(messages, hasMore, nextCursor, nil)
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -755,7 +764,9 @@ func TestHandler_GetUserProfiles(t *testing.T) {
 		}, nil)
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -799,7 +810,9 @@ func TestHandler_GetUserProfiles(t *testing.T) {
 		mockClient.On("GetUserProfile", "U2345678").Return(nil, errors.New("user not found"))
 
 		handler := &Handler{
-			slackClient: mockClient,
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 		}
 
 		req := mcp.CallToolRequest{
@@ -855,8 +868,11 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 			userRepository: userRepo,
 		}
 
@@ -920,8 +936,11 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 			userRepository: userRepo,
 		}
 
@@ -970,8 +989,11 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		userRepo := NewUserRepository(mockClient)
+		userRepo := NewUserRepository()
 		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
 			userRepository: userRepo,
 		}
 

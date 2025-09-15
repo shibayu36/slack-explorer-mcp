@@ -30,9 +30,9 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		repo := NewUserRepository(mockClient)
+		repo := NewUserRepository()
 
-		result, err := repo.FindByDisplayName(t.Context(), "jdoe", true)
+		result, err := repo.FindByDisplayName(t.Context(), mockClient, "jdoe", true)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 1)
@@ -71,10 +71,10 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		repo := NewUserRepository(mockClient)
+		repo := NewUserRepository()
 
 		// Search for "john" should match john.doe and jane.johnson
-		result, err := repo.FindByDisplayName(t.Context(), "john", false)
+		result, err := repo.FindByDisplayName(t.Context(), mockClient, "john", false)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
@@ -103,15 +103,15 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil).Once()
 
-		repo := NewUserRepository(mockClient)
+		repo := NewUserRepository()
 
 		// First call - should call API
-		result1, err1 := repo.FindByDisplayName(t.Context(), "jdoe", true)
+		result1, err1 := repo.FindByDisplayName(t.Context(), mockClient, "jdoe", true)
 		assert.NoError(t, err1)
 		assert.Len(t, result1, 1)
 
 		// Second call - should use cache, not call API again
-		result2, err2 := repo.FindByDisplayName(t.Context(), "jdoe", true)
+		result2, err2 := repo.FindByDisplayName(t.Context(), mockClient, "jdoe", true)
 		assert.NoError(t, err2)
 		assert.Len(t, result2, 1)
 		assert.Equal(t, result1[0].ID, result2[0].ID)
@@ -133,9 +133,9 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		}
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
-		repo := NewUserRepository(mockClient)
+		repo := NewUserRepository()
 
-		result, err := repo.FindByDisplayName(t.Context(), "Not Found User", true)
+		result, err := repo.FindByDisplayName(t.Context(), mockClient, "Not Found User", true)
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)

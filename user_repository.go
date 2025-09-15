@@ -9,22 +9,24 @@ import (
 
 // UserRepository manages user information with caching
 type UserRepository struct {
-	client      SlackClient
 	cachedUsers []slack.User
 }
 
 // NewUserRepository creates a new UserRepository
-func NewUserRepository(client SlackClient) *UserRepository {
-	return &UserRepository{
-		client: client,
-	}
+func NewUserRepository() *UserRepository {
+	return &UserRepository{}
 }
 
 // FindByDisplayName searches for users by display name
-func (r *UserRepository) FindByDisplayName(ctx context.Context, displayName string, exact bool) ([]slack.User, error) {
+func (r *UserRepository) FindByDisplayName(
+	ctx context.Context,
+	client SlackClient,
+	displayName string,
+	exact bool,
+) ([]slack.User, error) {
 	// Load users if not cached yet
 	if r.cachedUsers == nil {
-		users, err := r.client.GetUsers(ctx)
+		users, err := client.GetUsers(ctx)
 		if err != nil {
 			return nil, err
 		}

@@ -153,7 +153,7 @@ func main() {
 		handler.SearchUsersByName,
 	)
 
-	if err := server.ServeStdio(s); err != nil {
+	if err := server.ServeStdio(s, server.WithStdioContextFunc(WithSlackTokenFromEnv)); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)
 	}

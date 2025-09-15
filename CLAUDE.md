@@ -86,6 +86,20 @@ When creating tests, always consult with the user about the test case list befor
 - Use English for all comments and documentation.
 - Use Japanese for all comments and documentation when the code is written in Japanese.
 
+### Function and Method Parameters
+- When a function or method has 4 or more parameters, format each parameter on its own line for better readability
+- Example:
+```go
+func (r *UserRepository) FindByDisplayName(
+    ctx context.Context,
+    client SlackClient,
+    displayName string,
+    exact bool,
+) ([]slack.User, error) {
+    // implementation
+}
+```
+
 ### Appropriate Use of Comments
 **⚠️ Important**: Keep comments to the absolute minimum. Do not comment on things that are immediately obvious from reading the code.
 
