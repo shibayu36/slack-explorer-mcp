@@ -167,12 +167,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		// sessionCaches structure should be expected
 		assert.Equal(t, map[SessionID]*SessionCache{
-			"session-1": {
-				users: users1,
-			},
-			"session-2": {
-				users: users2,
-			},
+			"session-1": {users: users1},
+			"session-2": {users: users2},
 		}, repo.sessionCaches)
 
 		// Second call with session 1 - should use cache
