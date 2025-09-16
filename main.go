@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -153,7 +154,16 @@ func main() {
 		handler.SearchUsersByName,
 	)
 
-	if err := server.ServeStdio(s, server.WithStdioContextFunc(WithSlackTokenFromEnv)); err != nil {
+	if err := server.ServeStdio(s, server.WithStdioContextFunc(func(ctx context.Context) context.Context {
+		ctx = WithSlackTokenFromEnv(ctx)
+
+		// Add session ID from ClientSession
+		if session := server.ClientSessionFromContext(ctx); session != nil {
+			ctx = WithSessionID(ctx, SessionID(session.SessionID()))
+		}
+
+		return ctx
+	})); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 		log.Fatalf("Failed to serve: %v", err)
 	}
