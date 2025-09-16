@@ -5,6 +5,7 @@ import (
 
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestUserRepository_FindByDisplayName(t *testing.T) {
@@ -149,8 +150,8 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		ctx2 := WithSessionID(t.Context(), SessionID("session-2"))
 
 		// Mock API calls for each session
-		mockClient.On("GetUsers", ctx1, []slack.GetUsersOption(nil)).Return(users1, nil).Once()
-		mockClient.On("GetUsers", ctx2, []slack.GetUsersOption(nil)).Return(users2, nil).Once()
+		mockClient.On("GetUsers", ctx1, mock.Anything).Return(users1, nil).Once()
+		mockClient.On("GetUsers", ctx2, mock.Anything).Return(users2, nil).Once()
 
 		// First call with session 1
 		result1, err1 := repo.FindByDisplayName(ctx1, mockClient, "session1user", true)
