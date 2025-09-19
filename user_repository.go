@@ -111,17 +111,23 @@ func (r *UserRepository) sweeper() {
 	for {
 		select {
 		case <-ticker.C:
-			r.mu.Lock()
-			for sessionID, cache := range r.sessionCaches {
-				if r.isExpired(cache) {
-					delete(r.sessionCaches, sessionID)
-				}
-			}
-			r.mu.Unlock()
+			r.sweepExpiredCaches()
 		case <-r.stopCh:
 			return
 		}
 	}
+}
+
+func (r *UserRepository) sweepExpiredCaches() {
+	now := r.now()
+
+	r.mu.Lock()
+	for sessionID, cache := range r.sessionCaches {
+		if now.Sub(cache.fetchedAt) > userRepositoryTTL {
+			delete(r.sessionCaches, sessionID)
+		}
+	}
+	r.mu.Unlock()
 }
 
 func (r *UserRepository) Close() {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
@@ -194,6 +195,58 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient.AssertExpectations(t)
 	})
 
+	t.Run("refreshes cache after ttl expiry", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+		usersInitial := []slack.User{
+			{
+				ID:      "U1111111",
+				Profile: slack.UserProfile{DisplayName: "initial"},
+			},
+		}
+		usersRefreshed := []slack.User{
+			{
+				ID:      "U2222222",
+				Profile: slack.UserProfile{DisplayName: "refreshed"},
+			},
+		}
+
+		now := time.Now()
+
+		repo := NewUserRepository()
+		repo.now = func() time.Time { return now }
+		t.Cleanup(repo.Close)
+
+		ctx := WithSessionID(t.Context(), SessionID("session-refresh"))
+
+		mockClient.On("GetUsers", ctx, mock.Anything).Return(usersInitial, nil).Once()
+
+		// First call populates cache
+		result1, err1 := repo.FindByDisplayName(ctx, mockClient, "initial", true)
+		assert.NoError(t, err1)
+		assert.Len(t, result1, 1)
+		assert.Equal(t, "U1111111", result1[0].ID)
+
+		mockClient.On("GetUsers", ctx, mock.Anything).Return(usersRefreshed, nil).Once()
+
+		now = now.Add(userRepositoryTTL)
+
+		// Use cache yet
+		result2, err2 := repo.FindByDisplayName(ctx, mockClient, "initial", true)
+		assert.NoError(t, err2)
+		assert.Len(t, result2, 1)
+		assert.Equal(t, "U1111111", result2[0].ID)
+
+		// Advance time beyond TTL and expect refreshed data
+		now = now.Add(time.Second)
+
+		result3, err3 := repo.FindByDisplayName(ctx, mockClient, "refreshed", true)
+		assert.NoError(t, err3)
+		assert.Len(t, result3, 1)
+		assert.Equal(t, "U2222222", result3[0].ID)
+
+		mockClient.AssertExpectations(t)
+	})
+
 	t.Run("returns empty array when no matches found", func(t *testing.T) {
 		mockClient := &SlackClientMock{}
 		users := []slack.User{
@@ -215,6 +268,48 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestUserRepository_sweepExpiredCaches(t *testing.T) {
+	t.Run("removes expired cache via sweeper", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+		users := []slack.User{
+			{
+				ID:      "U0000001",
+				Profile: slack.UserProfile{DisplayName: "foo"},
+			},
+		}
+
+		now := time.Now()
+
+		repo := NewUserRepository()
+		repo.now = func() time.Time { return now }
+		t.Cleanup(repo.Close)
+
+		ctx := WithSessionID(t.Context(), SessionID("session-clean"))
+
+		mockClient.On("GetUsers", ctx, mock.Anything).Return(users, nil).Once()
+
+		// Prime cache
+		_, err := repo.FindByDisplayName(ctx, mockClient, "foo", true)
+		assert.NoError(t, err)
+		assert.Len(t, repo.sessionCaches, 1)
+		assert.Equal(t, users, repo.sessionCaches[SessionID("session-clean")].users)
+		assert.Equal(t, now, repo.sessionCaches[SessionID("session-clean")].fetchedAt)
+
+		// Advance time beyond TTL
+		now = now.Add(userRepositoryTTL + time.Second)
+
+		// Run sweeper
+		repo.sweepExpiredCaches()
+
+		repo.mu.RLock()
+		_, exists := repo.sessionCaches[SessionID("session-clean")]
+		repo.mu.RUnlock()
+		assert.False(t, exists)
+
 		mockClient.AssertExpectations(t)
 	})
 }
