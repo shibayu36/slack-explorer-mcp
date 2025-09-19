@@ -70,6 +70,11 @@ func NewHandler() *Handler {
 	}
 }
 
+// Close releases resources owned by Handler.
+func (h *Handler) Close() {
+	h.userRepository.Close()
+}
+
 // SearchMessages handles the search_messages tool call
 func (h *Handler) SearchMessages(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	client, err := h.getClient(ctx)
