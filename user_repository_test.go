@@ -32,6 +32,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
 		repo := NewUserRepository()
+		t.Cleanup(repo.Close)
 
 		result, err := repo.FindByDisplayName(t.Context(), mockClient, "jdoe", true)
 
@@ -73,6 +74,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
 		repo := NewUserRepository()
+		t.Cleanup(repo.Close)
 
 		// Search for "john" should match john.doe and jane.johnson
 		result, err := repo.FindByDisplayName(t.Context(), mockClient, "john", false)
@@ -105,6 +107,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil).Once()
 
 		repo := NewUserRepository()
+		t.Cleanup(repo.Close)
 
 		// First call - should call API
 		result1, err1 := repo.FindByDisplayName(t.Context(), mockClient, "jdoe", true)
@@ -144,6 +147,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		}
 
 		repo := NewUserRepository()
+		t.Cleanup(repo.Close)
 
 		// Create contexts with different session IDs
 		ctx1 := WithSessionID(t.Context(), SessionID("session-1"))
@@ -166,10 +170,15 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		assert.Equal(t, "U2222222", result2[0].ID)
 
 		// sessionCaches structure should be expected
-		assert.Equal(t, map[SessionID]*SessionCache{
-			"session-1": {users: users1},
-			"session-2": {users: users2},
-		}, repo.sessionCaches)
+		assert.Len(t, repo.sessionCaches, 2)
+		cache1 := repo.sessionCaches[SessionID("session-1")]
+		if assert.NotNil(t, cache1) {
+			assert.Equal(t, users1, cache1.users)
+		}
+		cache2 := repo.sessionCaches[SessionID("session-2")]
+		if assert.NotNil(t, cache2) {
+			assert.Equal(t, users2, cache2.users)
+		}
 
 		// Second call with session 1 - should use cache
 		result3, err3 := repo.FindByDisplayName(ctx1, mockClient, "session1user", true)
@@ -200,6 +209,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient.On("GetUsers", t.Context(), []slack.GetUsersOption(nil)).Return(users, nil)
 
 		repo := NewUserRepository()
+		t.Cleanup(repo.Close)
 
 		result, err := repo.FindByDisplayName(t.Context(), mockClient, "Not Found User", true)
 
