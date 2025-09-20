@@ -124,8 +124,16 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
 起動方法:
 ```bash
 # HTTPサーバーとして起動（デフォルト: 全インターフェース0.0.0.0、ポート8080）
-TRANSPORT=http ./slack-explorer-mcp
+docker run -i --rm --pull always \
+  -e TRANSPORT=http \
+  -p 8080:8080 \
+  ghcr.io/shibayu36/slack-explorer-mcp:latest
 
 # カスタムホストとポートで起動
-TRANSPORT=http HTTP_HOST=127.0.0.1 HTTP_PORT=9090 ./slack-explorer-mcp
+docker run -i --rm --pull always \
+  -e TRANSPORT=http \
+  -e HTTP_HOST=127.0.0.1 \
+  -e HTTP_PORT=9090 \
+  -p 9090:9090 \
+  ghcr.io/shibayu36/slack-explorer-mcp:latest
 ```
