@@ -14,6 +14,7 @@ const Version = "0.5.0"
 func main() {
 	// Initialize handler
 	handler := NewHandler()
+	defer handler.Close()
 
 	s := server.NewMCPServer(
 		"slack-explorer-mcp",
