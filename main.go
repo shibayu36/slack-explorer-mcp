@@ -65,6 +65,7 @@ func main() {
 			),
 			mcp.WithBoolean("highlight",
 				mcp.Description("Enable highlighting of search results (default: false)"),
+				mcp.DefaultBool(false),
 			),
 			mcp.WithString("sort",
 				mcp.Description("Search result sort method: 'score' or 'timestamp' (default: 'score')"),
