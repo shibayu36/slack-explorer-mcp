@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -61,8 +62,11 @@ func (r *UserRepository) FindByDisplayName(
 	r.mu.RUnlock()
 
 	if exists && !r.isExpired(cache) {
+		slog.Debug("using cached users", "sessionID", sessionID, "cachedAt", cache.cachedAt)
 		return r.searchInUsers(cache.users, displayName, exact), nil
 	}
+
+	slog.Debug("fetching users", "sessionID", sessionID)
 
 	users, err := client.GetUsers(ctx)
 	if err != nil {

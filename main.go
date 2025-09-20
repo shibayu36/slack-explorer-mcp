@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -12,6 +12,14 @@ import (
 const Version = "0.5.0"
 
 func main() {
+	// Setup logging based on DEBUG environment variable
+	if os.Getenv("DEBUG") == "1" {
+		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		})))
+		slog.Debug("Debug logging enabled")
+	}
+
 	// Initialize handler
 	handler := NewHandler()
 	defer handler.Close()
@@ -165,7 +173,7 @@ func main() {
 
 		return ctx
 	})); err != nil {
-		fmt.Printf("Server error: %v\n", err)
-		log.Fatalf("Failed to serve: %v", err)
+		slog.Error("Failed to serve", "error", err)
+		os.Exit(1)
 	}
 }
