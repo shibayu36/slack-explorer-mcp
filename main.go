@@ -156,6 +156,7 @@ func main() {
 			),
 			mcp.WithBoolean("exact",
 				mcp.Description("If true (default), performs exact match. If false, performs partial match"),
+				mcp.DefaultBool(true),
 			),
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithReadOnlyHintAnnotation(true),
