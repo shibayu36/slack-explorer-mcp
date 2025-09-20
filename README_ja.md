@@ -116,3 +116,16 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
   ```
   ファイルが添付されているメッセージを検索
   ```
+
+### Streamable HTTPサーバーとして利用
+
+デフォルトはstdio経由でのMCP配信ですが、`TRANSPORT=http`環境変数を指定することでStreamable HTTPサーバーとして起動できます。Slackトークンは`X-Slack-User-Token`ヘッダーで渡します。
+
+起動方法:
+```bash
+# HTTPサーバーとして起動（デフォルトポート8080）
+TRANSPORT=http ./slack-explorer-mcp
+
+# カスタムポートで起動
+TRANSPORT=http PORT=9090 ./slack-explorer-mcp
+```

@@ -90,6 +90,19 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
 
 ## Usage
 
+### Using as Streamable HTTP Server
+
+By default, the server uses stdio for MCP communication. You can start it as a Streamable HTTP server by setting the `TRANSPORT=http` environment variable. In HTTP mode, pass the Slack token using the `X-Slack-User-Token` header.
+
+Starting the server:
+```bash
+# Start HTTP server (default port 8080)
+TRANSPORT=http ./slack-explorer-mcp
+
+# Start with custom port
+TRANSPORT=http PORT=9090 ./slack-explorer-mcp
+```
+
 ### Common Search Patterns
 
 - **Search in a specific channel**
