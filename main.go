@@ -197,8 +197,12 @@ func main() {
 				return ctx
 			}),
 		)
-		slog.Info("HTTP server listening on :8080")
-		if err := httpServer.Start(":8080"); err != nil {
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
+		slog.Info("HTTP server listening", "port", port)
+		if err := httpServer.Start(":" + port); err != nil {
 			slog.Error("Failed to serve http", "error", err)
 			os.Exit(1)
 		}
