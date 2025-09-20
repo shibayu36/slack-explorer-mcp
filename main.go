@@ -197,12 +197,17 @@ func main() {
 				return ctx
 			}),
 		)
-		port := os.Getenv("PORT")
+		host := os.Getenv("HTTP_HOST")
+		if host == "" {
+			host = "0.0.0.0"
+		}
+		port := os.Getenv("HTTP_PORT")
 		if port == "" {
 			port = "8080"
 		}
-		slog.Info("HTTP server listening", "port", port)
-		if err := httpServer.Start(":" + port); err != nil {
+		addr := host + ":" + port
+		slog.Info("HTTP server listening", "address", addr)
+		if err := httpServer.Start(addr); err != nil {
 			slog.Error("Failed to serve http", "error", err)
 			os.Exit(1)
 		}

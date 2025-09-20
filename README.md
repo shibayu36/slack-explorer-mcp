@@ -96,11 +96,11 @@ By default, the server uses stdio for MCP communication. You can start it as a S
 
 Starting the server:
 ```bash
-# Start HTTP server (default port 8080)
+# Start HTTP server (default: all interfaces 0.0.0.0, port 8080)
 TRANSPORT=http ./slack-explorer-mcp
 
-# Start with custom port
-TRANSPORT=http PORT=9090 ./slack-explorer-mcp
+# Start with custom host and port
+TRANSPORT=http HTTP_HOST=127.0.0.1 HTTP_PORT=9090 ./slack-explorer-mcp
 ```
 
 ### Common Search Patterns
