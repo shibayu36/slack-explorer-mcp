@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	userRepositoryTTL      = 30 * time.Minute
-	userCacheSweepInterval = 5 * time.Minute
+	cacheTTL           = 30 * time.Minute
+	cacheSweepInterval = 5 * time.Minute
 )
 
 // SessionCache holds cached users for a specific session
 type SessionCache struct {
-	users     []slack.User
-	fetchedAt time.Time
+	users    []slack.User
+	cachedAt time.Time
 }
 
 // UserRepository manages user information with session-based caching
@@ -71,8 +71,8 @@ func (r *UserRepository) FindByDisplayName(
 
 	r.mu.Lock()
 	r.sessionCaches[sessionID] = &SessionCache{
-		users:     users,
-		fetchedAt: r.now(),
+		users:    users,
+		cachedAt: r.now(),
 	}
 	r.mu.Unlock()
 
@@ -99,13 +99,13 @@ func (r *UserRepository) isExpired(cache *SessionCache) bool {
 	if cache == nil {
 		return true
 	}
-	return r.now().Sub(cache.fetchedAt) > userRepositoryTTL
+	return r.now().Sub(cache.cachedAt) > cacheTTL
 }
 
 func (r *UserRepository) sweeper() {
 	defer r.wg.Done()
 
-	ticker := time.NewTicker(userCacheSweepInterval)
+	ticker := time.NewTicker(cacheSweepInterval)
 	defer ticker.Stop()
 
 	for {
@@ -123,7 +123,7 @@ func (r *UserRepository) sweepExpiredCaches() {
 
 	r.mu.Lock()
 	for sessionID, cache := range r.sessionCaches {
-		if now.Sub(cache.fetchedAt) > userRepositoryTTL {
+		if now.Sub(cache.cachedAt) > cacheTTL {
 			delete(r.sessionCaches, sessionID)
 		}
 	}

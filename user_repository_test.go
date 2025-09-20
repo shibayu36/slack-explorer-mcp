@@ -228,7 +228,7 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 
 		mockClient.On("GetUsers", ctx, mock.Anything).Return(usersRefreshed, nil).Once()
 
-		now = now.Add(userRepositoryTTL)
+		now = now.Add(cacheTTL)
 
 		// Use cache yet
 		result2, err2 := repo.FindByDisplayName(ctx, mockClient, "initial", true)
@@ -297,10 +297,10 @@ func TestUserRepository_sweepExpiredCaches(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, repo.sessionCaches, 1)
 		assert.Equal(t, users, repo.sessionCaches[SessionID("session-clean")].users)
-		assert.Equal(t, now, repo.sessionCaches[SessionID("session-clean")].fetchedAt)
+		assert.Equal(t, now, repo.sessionCaches[SessionID("session-clean")].cachedAt)
 
 		// Advance time beyond TTL
-		now = now.Add(userRepositoryTTL + time.Second)
+		now = now.Add(cacheTTL + time.Second)
 
 		// Run sweeper
 		repo.sweepExpiredCaches()
