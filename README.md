@@ -124,8 +124,16 @@ By default, the server uses stdio for MCP communication. You can start it as a S
 Starting the server:
 ```bash
 # Start HTTP server (default: all interfaces 0.0.0.0, port 8080)
-TRANSPORT=http ./slack-explorer-mcp
+docker run -i --rm --pull always \
+  -e TRANSPORT=http \
+  -p 8080:8080 \
+  ghcr.io/shibayu36/slack-explorer-mcp:latest
 
 # Start with custom host and port
-TRANSPORT=http HTTP_HOST=127.0.0.1 HTTP_PORT=9090 ./slack-explorer-mcp
+docker run -i --rm --pull always \
+  -e TRANSPORT=http \
+  -e HTTP_HOST=127.0.0.1 \
+  -e HTTP_PORT=9090 \
+  -p 9090:9090 \
+  ghcr.io/shibayu36/slack-explorer-mcp:latest
 ```
