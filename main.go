@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -163,17 +164,55 @@ func main() {
 		handler.SearchUsersByName,
 	)
 
-	if err := server.ServeStdio(s, server.WithStdioContextFunc(func(ctx context.Context) context.Context {
-		ctx = WithSlackTokenFromEnv(ctx)
+	transport := os.Getenv("TRANSPORT")
+	if transport == "" {
+		transport = "stdio"
+	}
 
-		// Add session ID from ClientSession
-		if session := server.ClientSessionFromContext(ctx); session != nil {
-			ctx = WithSessionID(ctx, SessionID(session.SessionID()))
+	switch transport {
+	case "stdio":
+		if err := server.ServeStdio(s, server.WithStdioContextFunc(func(ctx context.Context) context.Context {
+			ctx = WithSlackTokenFromEnv(ctx)
+
+			// Add session ID from ClientSession
+			if session := server.ClientSessionFromContext(ctx); session != nil {
+				ctx = WithSessionID(ctx, SessionID(session.SessionID()))
+			}
+
+			return ctx
+		})); err != nil {
+			slog.Error("Failed to serve stdio", "error", err)
+			os.Exit(1)
 		}
+	case "http":
+		httpServer := server.NewStreamableHTTPServer(s,
+			server.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
+				ctx = WithSlackTokenFromHTTP(ctx, r)
 
-		return ctx
-	})); err != nil {
-		slog.Error("Failed to serve", "error", err)
+				// Add session ID from ClientSession
+				if session := server.ClientSessionFromContext(ctx); session != nil {
+					ctx = WithSessionID(ctx, SessionID(session.SessionID()))
+				}
+
+				return ctx
+			}),
+		)
+		host := os.Getenv("HTTP_HOST")
+		if host == "" {
+			host = "0.0.0.0"
+		}
+		port := os.Getenv("HTTP_PORT")
+		if port == "" {
+			port = "8080"
+		}
+		addr := host + ":" + port
+		slog.Info("HTTP server listening", "address", addr)
+		if err := httpServer.Start(addr); err != nil {
+			slog.Error("Failed to serve http", "error", err)
+			os.Exit(1)
+		}
+	default:
+		slog.Error("Invalid transport type", "transport", transport, "valid_types", "stdio, http")
 		os.Exit(1)
 	}
 }

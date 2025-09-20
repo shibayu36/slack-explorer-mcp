@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -29,6 +30,16 @@ func WithSlackTokenFromEnv(ctx context.Context) context.Context {
 	token := os.Getenv("SLACK_USER_TOKEN")
 	if token == "" {
 		// Return context as-is if no env var found
+		return ctx
+	}
+	return withSlackUserToken(ctx, token)
+}
+
+// WithSlackTokenFromHTTP adds Slack token from HTTP header to context
+func WithSlackTokenFromHTTP(ctx context.Context, r *http.Request) context.Context {
+	token := r.Header.Get("X-Slack-User-Token")
+	if token == "" {
+		// Return context as-is if no token found in header
 		return ctx
 	}
 	return withSlackUserToken(ctx, token)
