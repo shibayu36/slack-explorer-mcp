@@ -199,14 +199,22 @@ func TestUserRepository_FindByDisplayName(t *testing.T) {
 		mockClient := &SlackClientMock{}
 		usersInitial := []slack.User{
 			{
-				ID:      "U1111111",
-				Profile: slack.UserProfile{DisplayName: "initial"},
+				ID: "U1111111",
+				Profile: slack.UserProfile{
+					DisplayName: "initial",
+					RealName:    "Initial User",
+					Email:       "initial@example.com",
+				},
 			},
 		}
 		usersRefreshed := []slack.User{
 			{
-				ID:      "U2222222",
-				Profile: slack.UserProfile{DisplayName: "refreshed"},
+				ID: "U2222222",
+				Profile: slack.UserProfile{
+					DisplayName: "refreshed",
+					RealName:    "Refreshed User",
+					Email:       "refreshed@example.com",
+				},
 			},
 		}
 
@@ -277,8 +285,12 @@ func TestUserRepository_sweepExpiredCaches(t *testing.T) {
 		mockClient := &SlackClientMock{}
 		users := []slack.User{
 			{
-				ID:      "U0000001",
-				Profile: slack.UserProfile{DisplayName: "foo"},
+				ID: "U0000001",
+				Profile: slack.UserProfile{
+					DisplayName: "foo",
+					RealName:    "Foo User",
+					Email:       "foo@example.com",
+				},
 			},
 		}
 
