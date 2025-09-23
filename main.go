@@ -33,7 +33,11 @@ func main() {
 	// Add search_messages tool
 	s.AddTool(
 		mcp.NewTool("search_messages",
-			mcp.WithDescription("Search for messages with specific criteria/filters. Use this when: 1) You need to find messages from a specific user, 2) You need messages from a specific date range, 3) You need to search by keywords, 4) You want to filter by channel. This tool is optimized for targeted searches."),
+			mcp.WithDescription(`Search for messages with specific criteria/filters. Use this when: 1) You need to find messages from a specific user, 2) You need messages from a specific date range, 3) You need to search by keywords, 4) You want to filter by channel. This tool is optimized for targeted searches.
+
+Note: Response includes workspace_url, channel.id, and ts (timestamp) which can be used to construct Slack permalinks:
+- Regular message (no thread_ts field): {workspace_url}/archives/{channel.id}/p{ts without dot}
+- Thread reply (has thread_ts field): Same URL with ?thread_ts={thread_ts}&channel={channel.id}&message_ts={ts}`),
 			mcp.WithString("query",
 				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', etc. - use the dedicated fields instead."),
 			),
@@ -105,7 +109,12 @@ func main() {
 	// Add get_thread_replies tool
 	s.AddTool(
 		mcp.NewTool("get_thread_replies",
-			mcp.WithDescription("Get all replies in a message thread"),
+			mcp.WithDescription(`Get all replies in a message thread
+
+Note: To construct Slack permalinks from the response:
+- Use workspace_url from search_messages tool response
+- Thread reply URL: {workspace_url}/archives/{channel_id}/p{ts without dot}?thread_ts={thread_ts}&channel={channel_id}&message_ts={ts}
+Where channel_id and thread_ts are the values provided as input parameters`),
 			mcp.WithString("channel_id",
 				mcp.Required(),
 				mcp.Description("The ID of the channel containing the thread (e.g., 'C1234567')"),
