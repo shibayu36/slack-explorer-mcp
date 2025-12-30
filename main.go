@@ -10,7 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-const Version = "0.8.0"
+const Version = "0.8.1"
 
 func main() {
 	// Setup logging based on DEBUG environment variable
