@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shibayu36/slack-explorer-mcp",
+  "title": "Slack Explorer MCP",
+  "description": "MCP server specialized in retrieving information from Slack messages and threads",
+  "repository": {
+    "url": "https://github.com/shibayu36/slack-explorer-mcp",
+    "source": "github"
+  },
+  "version": "0.8.0",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/shibayu36/slack-explorer-mcp:0.8.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
