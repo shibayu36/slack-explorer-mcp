@@ -27,6 +27,11 @@ fi
 echo "Updating version to $VERSION..."
 sed -i '' "s/const Version = \".*\"/const Version = \"$VERSION\"/" main.go
 
+# Update version in server.json
+echo "Updating server.json version..."
+sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" server.json
+sed -i '' "s|ghcr.io/shibayu36/slack-explorer-mcp:[^\"]*|ghcr.io/shibayu36/slack-explorer-mcp:$VERSION|" server.json
+
 # Run tests to ensure everything works
 echo "Running tests..."
 go test ./...
@@ -37,7 +42,7 @@ go build -o slack-explorer-mcp
 
 # Commit version change
 echo "Committing version change..."
-git add main.go
+git add main.go server.json
 git commit -m "Release v$VERSION"
 
 # Create annotated tag
