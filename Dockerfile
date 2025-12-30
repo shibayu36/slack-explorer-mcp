@@ -14,6 +14,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o slack-explorer-mcp .
 # Runtime stage
 FROM alpine:latest
 
+# MCP Registry metadata
+LABEL io.modelcontextprotocol.server.name="io.github.shibayu36/slack-explorer-mcp"
+
 # Add CA certificates for HTTPS communication
 RUN apk --no-cache add ca-certificates
 
