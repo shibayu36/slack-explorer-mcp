@@ -17,7 +17,6 @@ Slackのファイルを汎用的に検索し、Canvas等の中身を取得でき
 
 2. **get_canvas_content tool**: Canvas IDを指定して中身のテキストを取得
    - `url_private_download`からHTMLをダウンロード
-   - LLMトークン節約のため不要コンテンツ（script/styleタグ等）を削除して返す
    - サイズ制限なし（全文取得）
 
 ## Out of scope
@@ -67,7 +66,7 @@ Feature: ファイル検索機能
     And Canvas ID "F12345678"が存在する
     When get_canvas_contentにcanvas_ids=["F12345678"]を指定して実行する
     Then Canvasのタイトルとコンテンツが返される
-    And コンテンツはscript/styleタグ等の不要コンテンツが削除されたHTMLである
+    And コンテンツはHTMLとして取得される
 ```
 
 ### 例外ケース
@@ -235,3 +234,26 @@ slack_client.go
 1. **単体テスト**: handler_test.goで各toolのテスト
 2. **手動テスト**: 実際のSlackワークスペースでファイル検索・Canvas取得を確認
 3. **MCPクライアントテスト**: Claude Codeから実際にtoolを呼び出して動作確認
+
+## 実装計画
+
+実装時は https://github.com/shibayu36/slack-explorer-mcp/pull/26 のPoCのコード変更を参考にしてよい。
+
+### フェーズ1: search_files tool（4 commits）
+
+| # | commit message | 対象ファイル |
+|---|----------------|-------------|
+| 1-1 | Add SearchFiles method to SlackClient | slack_client.go, slack_client_mock_test.go |
+| 1-2 | Add SearchFiles handler and tests | handler.go, handler_test.go |
+| 1-3 | Add search_files tool definition | main.go |
+| 1-4 | Add search_files documentation | README_ja.md, README.md |
+
+### フェーズ2: get_canvas_content tool（5 commits）
+
+| # | commit message | 対象ファイル |
+|---|----------------|-------------|
+| 2-1 | Add GetFileInfo method to SlackClient | slack_client.go, slack_client_mock_test.go |
+| 2-2 | Add GetFile method to SlackClient | slack_client.go, slack_client_mock_test.go |
+| 2-3 | Add GetCanvasContent handler and tests | handler.go, handler_test.go |
+| 2-4 | Add get_canvas_content tool definition | main.go |
+| 2-5 | Add get_canvas_content documentation | README_ja.md, README.md |
