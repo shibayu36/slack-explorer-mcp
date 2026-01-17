@@ -27,7 +27,7 @@ Slackのファイルを汎用的に検索し、Canvas等の中身を取得でき
 - Canvas内の画像・添付ファイルの取得
 - リアルタイム更新通知
 - Canvasのバージョン履歴取得
-- HTMLの高度な簡略化（見出し・リンクのみ抽出等）→ 次回スコープ
+- HTMLの高度な簡略化（見出し・リンクのみ抽出等、canvas_extractor.go）→ 次回スコープ
 - Canvas以外のファイルタイプの中身取得（get_pdf_content等）→ 次回スコープ
 
 ## User Stories
@@ -175,14 +175,11 @@ main.go
 
 handler.go
   └─ SearchFiles() - パラメータ検証 → SearchFiles API呼び出し → レスポンス変換
-  └─ GetCanvasContent() - url_private_downloadからダウンロード → HTMLサニタイズ
+  └─ GetCanvasContent() - url_private_downloadからダウンロード → レスポンス返却
 
 slack_client.go
   └─ SearchFiles(query, params) - search.files API
   └─ GetFile(url, writer) - ファイルダウンロード（既存メソッド活用）
-
-canvas_extractor.go (新規)
-  └─ ExtractCanvasContent(html) - LLMトークン節約のためscript/styleタグ等の不要コンテンツを削除
 ```
 
 ### 使用するSlack API
@@ -230,7 +227,6 @@ canvas_extractor.go (新規)
 - `main.go` - 新規tool定義追加
 - `handler.go` - SearchFiles, GetCanvasContent実装
 - `slack_client.go` - SearchFiles追加
-- `canvas_extractor.go` - 新規作成（Canvas HTMLからのコンテンツ抽出）
 - `handler_test.go` - テスト追加
 - `slack_client_mock_test.go` - モック追加
 - `README.md` / `README_ja.md` - ドキュメント更新
