@@ -175,6 +175,90 @@ Where channel_id and thread_ts are the values provided as input parameters`),
 		handler.SearchUsersByName,
 	)
 
+	// Add search_files tool
+	s.AddTool(
+		mcp.NewTool("search_files",
+			mcp.WithDescription(`Search for files with specific criteria/filters. Use this when you need to find files (canvases, PDFs, images, etc.) in Slack.
+
+Available file types for 'types' parameter:
+- lists: Lists
+- canvases: Canvases
+- documents: Documents (Google Docs, etc.)
+- emails: Emails
+- images: Images
+- pdfs: PDFs
+- presentations: Presentations
+- snippets: Snippets
+- spreadsheets: Spreadsheets
+- audio: Audio files
+- videos: Video files`),
+			mcp.WithString("query",
+				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', 'type:', etc. - use the dedicated fields instead."),
+			),
+			mcp.WithArray("types",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("File types to filter by (e.g., ['canvases', 'pdfs']). Multiple types can be specified."),
+			),
+			mcp.WithString("in_channel",
+				mcp.Description("Search within a specific channel. Specify the channel name (e.g., 'general', 'random')."),
+			),
+			mcp.WithString("from_user",
+				mcp.Description("Search for files from a specific user. Must be a Slack user ID (e.g., 'U1234567')."),
+			),
+			mcp.WithArray("with_user",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Search for files shared with specific users. Must be Slack user IDs (e.g., ['U1234567', 'U2345678'])."),
+			),
+			mcp.WithString("before",
+				mcp.Description("Search for files before this date (YYYY-MM-DD)"),
+			),
+			mcp.WithString("after",
+				mcp.Description("Search for files after this date (YYYY-MM-DD)"),
+			),
+			mcp.WithString("on",
+				mcp.Description("Search for files on this specific date (YYYY-MM-DD)"),
+			),
+			mcp.WithNumber("count",
+				mcp.Description("Number of results per page (1-100, default: 20)"),
+			),
+			mcp.WithNumber("page",
+				mcp.Description("Page number of results (1-100, default: 1)"),
+			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
+		),
+		handler.SearchFiles,
+	)
+
+	// Add get_canvas_content tool
+	s.AddTool(
+		mcp.NewTool("get_canvas_content",
+			mcp.WithDescription("Get the content of Canvas files. Canvas IDs can be obtained from search_files results."),
+			mcp.WithArray("canvas_ids",
+				mcp.Required(),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Array of Canvas file IDs to retrieve content for (e.g., ['F12345678', 'F23456789']). IDs start with 'F'. Maximum 10 IDs."),
+			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
+		),
+		handler.GetCanvasContent,
+	)
+
 	transport := os.Getenv("TRANSPORT")
 	if transport == "" {
 		transport = "stdio"

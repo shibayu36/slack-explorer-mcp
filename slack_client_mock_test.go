@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/mock"
@@ -14,6 +15,15 @@ func (m *SlackClientMock) SearchMessages(query string, params slack.SearchParame
 	var res *slack.SearchMessages
 	if v := args.Get(0); v != nil {
 		res = v.(*slack.SearchMessages)
+	}
+	return res, args.Error(1)
+}
+
+func (m *SlackClientMock) SearchFiles(query string, params slack.SearchParameters) (*slack.SearchFiles, error) {
+	args := m.Called(query, params)
+	var res *slack.SearchFiles
+	if v := args.Get(0); v != nil {
+		res = v.(*slack.SearchFiles)
 	}
 	return res, args.Error(1)
 }
@@ -40,4 +50,18 @@ func (m *SlackClientMock) GetUsers(ctx context.Context, options ...slack.GetUser
 		res = v.([]slack.User)
 	}
 	return res, args.Error(1)
+}
+
+func (m *SlackClientMock) GetFileInfo(fileID string) (*slack.File, error) {
+	args := m.Called(fileID)
+	var res *slack.File
+	if v := args.Get(0); v != nil {
+		res = v.(*slack.File)
+	}
+	return res, args.Error(1)
+}
+
+func (m *SlackClientMock) GetFile(downloadURL string, writer io.Writer) error {
+	args := m.Called(downloadURL, writer)
+	return args.Error(0)
 }

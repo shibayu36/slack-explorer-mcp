@@ -9,6 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestHandler_SearchMessages(t *testing.T) {
@@ -1020,5 +1021,393 @@ func TestHandler_SearchUsersByName(t *testing.T) {
 		assert.Equal(t, 0, len(profiles))
 
 		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestHandler_SearchFiles(t *testing.T) {
+	t.Run("can search files with parameters", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockResponse := &slack.SearchFiles{
+			Matches: []slack.File{
+				{
+					ID:        "F12345678",
+					Name:      "project-plan.canvas",
+					Title:     "Project Plan",
+					Filetype:  "canvas",
+					User:      "U12345678",
+					Channels:  []string{"C12345678"},
+					Created:   slack.JSONTime(1704067200),
+					Timestamp: slack.JSONTime(1704153600),
+					Permalink: "https://xxx.slack.com/files/U12345678/F12345678/xxx",
+				},
+			},
+			Paging: slack.Paging{
+				Count: 20,
+				Total: 1,
+				Page:  1,
+				Pages: 1,
+			},
+		}
+
+		expectedQuery := "project type:canvases in:general from:<@U12345678>"
+		expectedParams := slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "desc",
+			Count:         20,
+			Page:          1,
+		}
+		mockClient.On("SearchFiles", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_files",
+				Arguments: map[string]interface{}{
+					"query":      "project",
+					"types":      []string{"canvases"},
+					"in_channel": "general",
+					"from_user":  "U12345678",
+				},
+			},
+		}
+
+		res, err := handler.SearchFiles(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		assert.Equal(t, true, response["ok"])
+		assert.Equal(t, expectedQuery, response["query"])
+
+		files := response["files"].([]interface{})
+		assert.Equal(t, 1, len(files))
+
+		file := files[0].(map[string]interface{})
+		assert.Equal(t, "F12345678", file["id"])
+		assert.Equal(t, "project-plan.canvas", file["name"])
+		assert.Equal(t, "Project Plan", file["title"])
+		assert.Equal(t, "canvas", file["filetype"])
+		assert.Equal(t, "U12345678", file["user"])
+
+		pagination := response["pagination"].(map[string]interface{})
+		assert.Equal(t, float64(1), pagination["total_count"])
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns empty when no files found", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockResponse := &slack.SearchFiles{
+			Matches: []slack.File{},
+			Paging: slack.Paging{
+				Count: 0,
+				Total: 0,
+				Page:  1,
+				Pages: 0,
+			},
+		}
+
+		expectedQuery := "nonexistent"
+		expectedParams := slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "desc",
+			Count:         20,
+			Page:          1,
+		}
+		mockClient.On("SearchFiles", expectedQuery, expectedParams).Return(mockResponse, nil)
+
+		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "search_files",
+				Arguments: map[string]interface{}{
+					"query": "nonexistent",
+				},
+			},
+		}
+
+		res, err := handler.SearchFiles(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		files := response["files"].([]interface{})
+		assert.Equal(t, 0, len(files))
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestHandler_buildSearchFilesParams(t *testing.T) {
+	handler := &Handler{}
+
+	t.Run("query only with defaults", func(t *testing.T) {
+		request := buildSearchFilesParamsRequest{
+			Query: "hello",
+			Count: 20,
+			Page:  1,
+		}
+
+		query, params, err := handler.buildSearchFilesParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "hello", query)
+		assert.Equal(t, slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "desc",
+			Count:         20,
+			Page:          1,
+		}, params)
+	})
+
+	t.Run("all parameters specified", func(t *testing.T) {
+		request := buildSearchFilesParamsRequest{
+			Query:     "test",
+			Types:     []string{"canvases", "pdfs"},
+			InChannel: "general",
+			FromUser:  "U1234567",
+			WithUser:  []string{"U2345678"},
+			Before:    "2024-01-15",
+			After:     "2024-01-01",
+			On:        "2024-01-10",
+			Count:     50,
+			Page:      2,
+		}
+
+		query, params, err := handler.buildSearchFilesParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "test type:canvases type:pdfs in:general from:<@U1234567> with:<@U2345678> before:2024-01-15 after:2024-01-01 on:2024-01-10", query)
+		assert.Equal(t, slack.SearchParameters{
+			Sort:          "timestamp",
+			SortDirection: "desc",
+			Count:         50,
+			Page:          2,
+		}, params)
+	})
+
+	t.Run("query with modifiers should error", func(t *testing.T) {
+		request := buildSearchFilesParamsRequest{
+			Query: "hello type:canvas",
+			Count: 20,
+			Page:  1,
+		}
+
+		_, _, err := handler.buildSearchFilesParams(request)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot contain modifiers")
+	})
+
+	t.Run("invalid user ID format should error", func(t *testing.T) {
+		request := buildSearchFilesParamsRequest{
+			FromUser: "invaliduser",
+			Count:    20,
+			Page:     1,
+		}
+
+		_, _, err := handler.buildSearchFilesParams(request)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid user ID format")
+	})
+}
+
+func TestHandler_GetCanvasContent(t *testing.T) {
+	t.Run("can get canvas content", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockFile := &slack.File{
+			ID:                 "F12345678",
+			Title:              "Test Canvas",
+			Filetype:           "canvas",
+			User:               "U12345678",
+			Created:            slack.JSONTime(1704067200),
+			Timestamp:          slack.JSONTime(1704153600),
+			Permalink:          "https://xxx.slack.com/files/U12345678/F12345678/xxx",
+			URLPrivateDownload: "https://files.slack.com/download/xxx",
+		}
+
+		mockClient.On("GetFileInfo", "F12345678").Return(mockFile, nil)
+		mockClient.On("GetFile", "https://files.slack.com/download/xxx", mock.Anything).Run(func(args mock.Arguments) {
+			writer := args.Get(1).(interface{ Write([]byte) (int, error) })
+			writer.Write([]byte("<html><head><script>alert('hi')</script></head><body><h1>Hello</h1><p>World</p></body></html>"))
+		}).Return(nil)
+
+		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_canvas_content",
+				Arguments: map[string]interface{}{
+					"canvas_ids": []string{"F12345678"},
+				},
+			},
+		}
+
+		res, err := handler.GetCanvasContent(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		canvases := response["canvases"].([]interface{})
+		assert.Equal(t, 1, len(canvases))
+
+		canvas := canvases[0].(map[string]interface{})
+		assert.Equal(t, "F12345678", canvas["id"])
+		assert.Equal(t, "Test Canvas", canvas["title"])
+		assert.NotContains(t, canvas["content"], "<script>")
+		assert.Contains(t, canvas["content"], "<h1>Hello</h1>")
+
+		mockClient.AssertExpectations(t)
+	})
+
+	t.Run("returns error for invalid canvas ID", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_canvas_content",
+				Arguments: map[string]interface{}{
+					"canvas_ids": []string{"invalid123"},
+				},
+			},
+		}
+
+		res, err := handler.GetCanvasContent(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		canvases := response["canvases"].([]interface{})
+		canvas := canvases[0].(map[string]interface{})
+		assert.Contains(t, canvas["error"], "invalid canvas ID format")
+	})
+
+	t.Run("returns error for non-canvas file", func(t *testing.T) {
+		mockClient := &SlackClientMock{}
+
+		mockFile := &slack.File{
+			ID:       "F12345678",
+			Filetype: "pdf",
+		}
+
+		mockClient.On("GetFileInfo", "F12345678").Return(mockFile, nil)
+
+		handler := &Handler{
+			getClient: func(ctx context.Context) (SlackClient, error) {
+				return mockClient, nil
+			},
+		}
+
+		req := mcp.CallToolRequest{
+			Params: struct {
+				Name      string    `json:"name"`
+				Arguments any       `json:"arguments,omitempty"`
+				Meta      *mcp.Meta `json:"_meta,omitempty"`
+			}{
+				Name: "get_canvas_content",
+				Arguments: map[string]interface{}{
+					"canvas_ids": []string{"F12345678"},
+				},
+			},
+		}
+
+		res, err := handler.GetCanvasContent(t.Context(), req)
+		assert.NoError(t, err)
+
+		var response map[string]interface{}
+		err = json.Unmarshal([]byte(res.Content[0].(mcp.TextContent).Text), &response)
+		assert.NoError(t, err)
+
+		canvases := response["canvases"].([]interface{})
+		canvas := canvases[0].(map[string]interface{})
+		assert.Contains(t, canvas["error"], "file is not a canvas")
+
+		mockClient.AssertExpectations(t)
+	})
+}
+
+func TestExtractCanvasContent(t *testing.T) {
+	t.Run("removes script tags", func(t *testing.T) {
+		html := "<html><head><script>alert('hi')</script></head><body><p>Hello</p></body></html>"
+		result, err := ExtractCanvasContent(html)
+		assert.NoError(t, err)
+		assert.NotContains(t, result, "<script>")
+		assert.NotContains(t, result, "alert")
+		assert.Contains(t, result, "<p>Hello</p>")
+	})
+
+	t.Run("removes style tags", func(t *testing.T) {
+		html := "<html><head><style>body{color:red}</style></head><body><p>Hello</p></body></html>"
+		result, err := ExtractCanvasContent(html)
+		assert.NoError(t, err)
+		assert.NotContains(t, result, "<style>")
+		assert.NotContains(t, result, "color:red")
+		assert.Contains(t, result, "<p>Hello</p>")
+	})
+
+	t.Run("removes link and meta tags", func(t *testing.T) {
+		html := "<html><head><link rel='stylesheet' href='style.css'><meta charset='utf-8'></head><body><p>Hello</p></body></html>"
+		result, err := ExtractCanvasContent(html)
+		assert.NoError(t, err)
+		assert.NotContains(t, result, "<link")
+		assert.NotContains(t, result, "<meta")
+		assert.Contains(t, result, "<p>Hello</p>")
+	})
+
+	t.Run("preserves content structure", func(t *testing.T) {
+		html := "<html><body><h1>Title</h1><p>Paragraph</p><ul><li>Item</li></ul></body></html>"
+		result, err := ExtractCanvasContent(html)
+		assert.NoError(t, err)
+		assert.Contains(t, result, "<h1>Title</h1>")
+		assert.Contains(t, result, "<p>Paragraph</p>")
+		assert.Contains(t, result, "<li>Item</li>")
 	})
 }
