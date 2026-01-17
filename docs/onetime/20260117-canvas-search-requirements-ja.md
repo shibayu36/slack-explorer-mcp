@@ -131,7 +131,6 @@ Feature: ファイル検索機能
   "files": [
     {
       "id": "F12345678",
-      "name": "プロジェクト計画書.canvas",
       "title": "プロジェクト計画書",
       "filetype": "canvas",
       "user": "U12345678",
