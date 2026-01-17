@@ -549,7 +549,6 @@ type SearchFilesResponse struct {
 
 type FileInfo struct {
 	ID        string   `json:"id"`
-	Name      string   `json:"name"`
 	Title     string   `json:"title"`
 	Filetype  string   `json:"filetype"`
 	User      string   `json:"user"`
@@ -696,7 +695,6 @@ func (h *Handler) convertToFilesResponse(query string, result *slack.SearchFiles
 	for _, match := range result.Matches {
 		file := FileInfo{
 			ID:        match.ID,
-			Name:      match.Name,
 			Title:     match.Title,
 			Filetype:  match.Filetype,
 			User:      match.User,
@@ -799,18 +797,10 @@ func (h *Handler) getCanvasContent(client SlackClient, canvasID string) CanvasCo
 		}
 	}
 
-	content, err := ExtractCanvasContent(buf.String())
-	if err != nil {
-		return CanvasContent{
-			ID:    canvasID,
-			Error: fmt.Sprintf("failed to extract canvas content: %v", err),
-		}
-	}
-
 	return CanvasContent{
 		ID:        file.ID,
 		Title:     file.Title,
-		Content:   content,
+		Content:   buf.String(),
 		User:      file.User,
 		Created:   int64(file.Created),
 		Updated:   int64(file.Timestamp),

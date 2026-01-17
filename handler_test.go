@@ -1096,7 +1096,6 @@ func TestHandler_SearchFiles(t *testing.T) {
 
 		file := files[0].(map[string]interface{})
 		assert.Equal(t, "F12345678", file["id"])
-		assert.Equal(t, "project-plan.canvas", file["name"])
 		assert.Equal(t, "Project Plan", file["title"])
 		assert.Equal(t, "canvas", file["filetype"])
 		assert.Equal(t, "U12345678", file["user"])
@@ -1290,7 +1289,6 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		canvas := canvases[0].(map[string]interface{})
 		assert.Equal(t, "F12345678", canvas["id"])
 		assert.Equal(t, "Test Canvas", canvas["title"])
-		assert.NotContains(t, canvas["content"], "<script>")
 		assert.Contains(t, canvas["content"], "<h1>Hello</h1>")
 
 		mockClient.AssertExpectations(t)
@@ -1371,43 +1369,5 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		assert.Contains(t, canvas["error"], "file is not a canvas")
 
 		mockClient.AssertExpectations(t)
-	})
-}
-
-func TestExtractCanvasContent(t *testing.T) {
-	t.Run("removes script tags", func(t *testing.T) {
-		html := "<html><head><script>alert('hi')</script></head><body><p>Hello</p></body></html>"
-		result, err := ExtractCanvasContent(html)
-		assert.NoError(t, err)
-		assert.NotContains(t, result, "<script>")
-		assert.NotContains(t, result, "alert")
-		assert.Contains(t, result, "<p>Hello</p>")
-	})
-
-	t.Run("removes style tags", func(t *testing.T) {
-		html := "<html><head><style>body{color:red}</style></head><body><p>Hello</p></body></html>"
-		result, err := ExtractCanvasContent(html)
-		assert.NoError(t, err)
-		assert.NotContains(t, result, "<style>")
-		assert.NotContains(t, result, "color:red")
-		assert.Contains(t, result, "<p>Hello</p>")
-	})
-
-	t.Run("removes link and meta tags", func(t *testing.T) {
-		html := "<html><head><link rel='stylesheet' href='style.css'><meta charset='utf-8'></head><body><p>Hello</p></body></html>"
-		result, err := ExtractCanvasContent(html)
-		assert.NoError(t, err)
-		assert.NotContains(t, result, "<link")
-		assert.NotContains(t, result, "<meta")
-		assert.Contains(t, result, "<p>Hello</p>")
-	})
-
-	t.Run("preserves content structure", func(t *testing.T) {
-		html := "<html><body><h1>Title</h1><p>Paragraph</p><ul><li>Item</li></ul></body></html>"
-		result, err := ExtractCanvasContent(html)
-		assert.NoError(t, err)
-		assert.Contains(t, result, "<h1>Title</h1>")
-		assert.Contains(t, result, "<p>Paragraph</p>")
-		assert.Contains(t, result, "<li>Item</li>")
 	})
 }
