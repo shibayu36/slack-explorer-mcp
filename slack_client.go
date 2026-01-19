@@ -10,6 +10,7 @@ import (
 // SlackClient is an interface for Slack API operations
 type SlackClient interface {
 	SearchMessages(query string, params slack.SearchParameters) (*slack.SearchMessages, error)
+	SearchFiles(query string, params slack.SearchParameters) (*slack.SearchFiles, error)
 	GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error)
 	GetUserProfile(userID string) (*slack.UserProfile, error)
 	GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error)
@@ -33,6 +34,15 @@ func (c *slackClient) SearchMessages(query string, params slack.SearchParameters
 		return nil, c.mapError(err)
 	}
 	return messages, nil
+}
+
+// SearchFiles searches for files in Slack workspace
+func (c *slackClient) SearchFiles(query string, params slack.SearchParameters) (*slack.SearchFiles, error) {
+	files, err := c.client.SearchFiles(query, params)
+	if err != nil {
+		return nil, c.mapError(err)
+	}
+	return files, nil
 }
 
 // GetConversationReplies retrieves replies to a message thread

@@ -175,6 +175,57 @@ Where channel_id and thread_ts are the values provided as input parameters`),
 		handler.SearchUsersByName,
 	)
 
+	// Add search_files tool
+	s.AddTool(
+		mcp.NewTool("search_files",
+			mcp.WithDescription(`Search for files with specific criteria/filters. Use this when: 1) You need to find files (canvases, PDFs, etc.) by keywords, 2) You need files from a specific user, 3) You need to filter by file type, 4) You want to filter by channel or date range.`),
+			mcp.WithString("query",
+				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', 'type:', etc. - use the dedicated fields instead."),
+			),
+			mcp.WithArray("types",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("File types to filter by (e.g., ['canvases', 'pdfs']). Available types: lists, canvases, documents, emails, images, pdfs, presentations, snippets, spreadsheets, audio, videos"),
+			),
+			mcp.WithString("in_channel",
+				mcp.Description("Search within a specific channel. Specify the channel name (e.g., 'general', 'random', 'チーム-dev')."),
+			),
+			mcp.WithString("from_user",
+				mcp.Description("Search for files from a specific user. Must be a Slack user ID (e.g., 'U1234567')."),
+			),
+			mcp.WithArray("with_users",
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Search for files in threads and direct messages with specific users. Must be Slack user IDs (e.g., ['U1234567', 'U2345678'])."),
+			),
+			mcp.WithString("before",
+				mcp.Description("Search for files before this date (YYYY-MM-DD)"),
+			),
+			mcp.WithString("after",
+				mcp.Description("Search for files after this date (YYYY-MM-DD)"),
+			),
+			mcp.WithString("on",
+				mcp.Description("Search for files on this specific date (YYYY-MM-DD)"),
+			),
+			mcp.WithNumber("count",
+				mcp.Description("Number of results per page (1-100, default: 20)"),
+			),
+			mcp.WithNumber("page",
+				mcp.Description("Page number of results (1-100, default: 1)"),
+			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
+		),
+		handler.SearchFiles,
+	)
+
 	transport := os.Getenv("TRANSPORT")
 	if transport == "" {
 		transport = "stdio"
