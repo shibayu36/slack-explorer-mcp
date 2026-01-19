@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/slack-go/slack"
 )
@@ -15,6 +16,7 @@ type SlackClient interface {
 	GetUserProfile(userID string) (*slack.UserProfile, error)
 	GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error)
 	GetFileInfo(fileID string) (*slack.File, error)
+	GetFile(downloadURL string, writer io.Writer) error
 }
 
 type slackClient struct {
@@ -83,6 +85,15 @@ func (c *slackClient) GetFileInfo(fileID string) (*slack.File, error) {
 		return nil, c.mapError(err)
 	}
 	return file, nil
+}
+
+// GetFile downloads a file from a private download URL
+func (c *slackClient) GetFile(downloadURL string, writer io.Writer) error {
+	err := c.client.GetFile(downloadURL, writer)
+	if err != nil {
+		return c.mapError(err)
+	}
+	return nil
 }
 
 func (c *slackClient) mapError(err error) error {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 
 	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/mock"
@@ -58,4 +59,9 @@ func (m *SlackClientMock) GetFileInfo(fileID string) (*slack.File, error) {
 		res = v.(*slack.File)
 	}
 	return res, args.Error(1)
+}
+
+func (m *SlackClientMock) GetFile(downloadURL string, writer io.Writer) error {
+	args := m.Called(downloadURL, writer)
+	return args.Error(0)
 }
