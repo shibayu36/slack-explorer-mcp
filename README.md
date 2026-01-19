@@ -38,6 +38,18 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
     - `display_name`: Display name to search for (required)
     - `exact`: Enable exact match search
 
+- File Search (`search_files`)
+  - Search for files such as canvases, PDFs, and images. You can filter by file type, channel, user, and date range.
+  - Parameters
+    - `query`: Basic search query (without modifiers)
+    - `types`: Filter by file types (e.g., ["canvases", "pdfs"]). Available types: lists, canvases, documents, emails, images, pdfs, presentations, snippets, spreadsheets, audio, videos
+    - `in_channel`: Filter by channel name (e.g., "general", "team-dev")
+    - `from_user`: Search files from specific user (User ID)
+    - `with_users`: Search files in DMs/threads with specific users (array of User IDs)
+    - `before`, `after`, `on`: Date range filtering (YYYY-MM-DD format)
+    - `count`: Number of results per page (1-100, default: 20)
+    - `page`: Page number (1-100, default: 1)
+
 ## Setup
 
 ### Getting a Slack User Token
