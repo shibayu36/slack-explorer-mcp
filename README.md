@@ -50,6 +50,11 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
     - `count`: Number of results per page (1-100, default: 20)
     - `page`: Page number (1-100, default: 1)
 
+- Canvas Content (`get_canvas_content`)
+  - Get HTML content of Slack canvases. Retrieve canvas content by specifying canvas IDs.
+  - Parameters
+    - `canvas_ids`: Array of canvas IDs (required, max 20)
+
 ## Setup
 
 ### Getting a Slack User Token
@@ -63,6 +68,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
    - `search:read` - For message search
    - `users.profile:read` - For user profiles
    - `users:read` - For user information
+   - `files:read` - For file content access
 3. Install the app to your workspace
 4. Get the User OAuth Token (starts with xoxp-)
    - Tip: To use with multiple users in the same workspace, add them as Collaborators and have each user reinstall from OAuth & Permissions to get their own User OAuth Token
