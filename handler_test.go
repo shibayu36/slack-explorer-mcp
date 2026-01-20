@@ -1342,6 +1342,7 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 			ID:                 "F1234567",
 			Title:              "Canvas 1",
 			URLPrivateDownload: "https://files.slack.com/F1234567.html",
+			Permalink:          "https://workspace.slack.com/files/U123/F1234567/canvas_1",
 		}, nil)
 		mockClient.On("GetFile", "https://files.slack.com/F1234567.html", mock.Anything).Run(func(args mock.Arguments) {
 			w := args.Get(1).(io.Writer)
@@ -1352,6 +1353,7 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 			ID:                 "F2345678",
 			Title:              "Canvas 2",
 			URLPrivateDownload: "https://files.slack.com/F2345678.html",
+			Permalink:          "https://workspace.slack.com/files/U123/F2345678/canvas_2",
 		}, nil)
 		mockClient.On("GetFile", "https://files.slack.com/F2345678.html", mock.Anything).Run(func(args mock.Arguments) {
 			w := args.Get(1).(io.Writer)
@@ -1390,11 +1392,13 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		assert.Equal(t, "F1234567", canvas1["id"])
 		assert.Equal(t, "Canvas 1", canvas1["title"])
 		assert.Equal(t, "<html>Content 1</html>", canvas1["content"])
+		assert.Equal(t, "https://workspace.slack.com/files/U123/F1234567/canvas_1", canvas1["permalink"])
 
 		canvas2 := canvases[1].(map[string]interface{})
 		assert.Equal(t, "F2345678", canvas2["id"])
 		assert.Equal(t, "Canvas 2", canvas2["title"])
 		assert.Equal(t, "<html>Content 2</html>", canvas2["content"])
+		assert.Equal(t, "https://workspace.slack.com/files/U123/F2345678/canvas_2", canvas2["permalink"])
 
 		mockClient.AssertExpectations(t)
 	})
@@ -1466,6 +1470,7 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 			ID:                 "F1234567",
 			Title:              "Success Canvas",
 			URLPrivateDownload: "https://files.slack.com/F1234567.html",
+			Permalink:          "https://workspace.slack.com/files/U123/F1234567/success_canvas",
 		}, nil)
 		mockClient.On("GetFile", "https://files.slack.com/F1234567.html", mock.Anything).Run(func(args mock.Arguments) {
 			w := args.Get(1).(io.Writer)
@@ -1521,6 +1526,7 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		assert.Equal(t, "F1234567", canvas1["id"])
 		assert.Equal(t, "Success Canvas", canvas1["title"])
 		assert.Equal(t, "<html>Success</html>", canvas1["content"])
+		assert.Equal(t, "https://workspace.slack.com/files/U123/F1234567/success_canvas", canvas1["permalink"])
 		assert.Nil(t, canvas1["error"])
 
 		// Invalid ID format

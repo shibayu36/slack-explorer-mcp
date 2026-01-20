@@ -721,10 +721,11 @@ type GetCanvasContentResponse struct {
 
 // CanvasContent represents a single canvas content result
 type CanvasContent struct {
-	ID      string `json:"id"`
-	Title   string `json:"title,omitempty"`
-	Content string `json:"content,omitempty"`
-	Error   string `json:"error,omitempty"`
+	ID        string `json:"id"`
+	Title     string `json:"title,omitempty"`
+	Content   string `json:"content,omitempty"`
+	Permalink string `json:"permalink,omitempty"`
+	Error     string `json:"error,omitempty"`
 }
 
 // GetCanvasContent retrieves content for multiple canvases
@@ -799,8 +800,9 @@ func (h *Handler) getCanvasContent(client SlackClient, canvasID string) CanvasCo
 	}
 
 	return CanvasContent{
-		ID:      canvasID,
-		Title:   fileInfo.Title,
-		Content: buf.String(),
+		ID:        canvasID,
+		Title:     fileInfo.Title,
+		Content:   buf.String(),
+		Permalink: fileInfo.Permalink,
 	}
 }
