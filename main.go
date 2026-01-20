@@ -226,6 +226,26 @@ Where channel_id and thread_ts are the values provided as input parameters`),
 		handler.SearchFiles,
 	)
 
+	// Add get_canvas_content tool
+	s.AddTool(
+		mcp.NewTool("get_canvas_content",
+			mcp.WithDescription("Get HTML content of Slack canvases by their IDs."),
+			mcp.WithArray("canvas_ids",
+				mcp.Required(),
+				mcp.Items(
+					map[string]interface{}{
+						"type": "string",
+					},
+				),
+				mcp.Description("Array of canvas file IDs to retrieve content for (e.g., ['F1234567', 'F2345678']). Maximum 20 canvas IDs."),
+			),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithOpenWorldHintAnnotation(true),
+		),
+		handler.GetCanvasContent,
+	)
+
 	transport := os.Getenv("TRANSPORT")
 	if transport == "" {
 		transport = "stdio"
