@@ -50,6 +50,11 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
     - `count`: ページあたりの結果数（1-100、デフォルト: 20）
     - `page`: ページ番号（1-100、デフォルト: 1）
 
+- キャンバスコンテンツ取得 (`get_canvas_content`)
+  - キャンバスのHTMLコンテンツを取得します。キャンバスIDを指定して、その内容を取得できます。
+  - パラメータ
+    - `canvas_ids`: キャンバスID配列（必須、最大20個）
+
 ## セットアップ
 
 ### Slack User Tokenの取得
@@ -63,6 +68,7 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
    - `search:read` - メッセージ検索用
    - `users.profile:read` - ユーザープロフィール取得用
    - `users:read` - ユーザー情報取得用
+   - `files:read` - ファイルコンテンツ取得用
 3. ワークスペースにアプリをインストール
 4. User OAuth Token（xoxp-で始まるトークン）を取得
    - もし同じワークスペースで複数ユーザーで使いたい場合、Collaboratorsとして追加し、各ユーザーがOAuth & PermissionsからReinstallを実行しUser OAuth Tokenを取得すると楽です

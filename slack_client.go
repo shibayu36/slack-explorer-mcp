@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/slack-go/slack"
 )
@@ -14,6 +15,8 @@ type SlackClient interface {
 	GetConversationReplies(params *slack.GetConversationRepliesParameters) ([]slack.Message, bool, string, error)
 	GetUserProfile(userID string) (*slack.UserProfile, error)
 	GetUsers(ctx context.Context, options ...slack.GetUsersOption) ([]slack.User, error)
+	GetFileInfo(fileID string) (*slack.File, error)
+	GetFile(downloadURL string, writer io.Writer) error
 }
 
 type slackClient struct {
@@ -75,6 +78,24 @@ func (c *slackClient) GetUsers(ctx context.Context, options ...slack.GetUsersOpt
 	return users, nil
 }
 
+// GetFileInfo retrieves file information by file ID
+func (c *slackClient) GetFileInfo(fileID string) (*slack.File, error) {
+	file, _, _, err := c.client.GetFileInfo(fileID, 0, 0)
+	if err != nil {
+		return nil, c.mapError(err)
+	}
+	return file, nil
+}
+
+// GetFile downloads a file from a private download URL
+func (c *slackClient) GetFile(downloadURL string, writer io.Writer) error {
+	err := c.client.GetFile(downloadURL, writer)
+	if err != nil {
+		return c.mapError(err)
+	}
+	return nil
+}
+
 func (c *slackClient) mapError(err error) error {
 	if rateLimitErr, ok := err.(*slack.RateLimitedError); ok {
 		return fmt.Errorf("rate limited: retry after %d seconds", rateLimitErr.RetryAfter)
@@ -92,6 +113,8 @@ func (c *slackClient) mapError(err error) error {
 			return fmt.Errorf("user not found: %s", slackErr.Err)
 		case "thread_not_found":
 			return fmt.Errorf("thread not found: %s", slackErr.Err)
+		case "file_not_found":
+			return fmt.Errorf("file not found: %s", slackErr.Err)
 		default:
 			return fmt.Errorf("slack API error: %s", slackErr.Err)
 		}
