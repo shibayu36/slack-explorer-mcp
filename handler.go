@@ -24,6 +24,15 @@ type SearchPagination struct {
 	Last       int `json:"last"`
 }
 
+// UserProfile represents a user profile result
+type UserProfile struct {
+	UserID      string `json:"user_id"`
+	DisplayName string `json:"display_name,omitempty"`
+	RealName    string `json:"real_name,omitempty"`
+	Email       string `json:"email,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
 // Handler struct implements the MCP handler
 type Handler struct {
 	getClient      func(ctx context.Context) (SlackClient, error)
