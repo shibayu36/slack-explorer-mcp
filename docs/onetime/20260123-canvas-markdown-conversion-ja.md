@@ -189,11 +189,102 @@ canvas_converter.go (新規)
 
 ## 実装計画
 
-| # | commit message | 対象ファイル |
-|---|----------------|-------------|
-| 1 | Add canvas HTML to Markdown converter | canvas_converter.go, canvas_converter_test.go |
-| 2 | Integrate Markdown conversion into GetCanvasContent | handler_get_canvas_content.go, handler_get_canvas_content_test.go |
-| 3 | Update get_canvas_content documentation | README_ja.md, README.md |
+### 設計方針
+
+#### ファイル構成
+
+```
+handler_get_canvas_content.go
+  └─ getCanvasContent()
+       └─ buf.String() を ConvertHTMLToMarkdown() に渡す
+
+canvas_converter.go (新規)
+  └─ ConvertHTMLToMarkdown(html string) string
+  └─ convertNode(node *html.Node, ctx *converterContext) string
+```
+
+#### 変換ロジックの概要
+
+```go
+// canvas_converter.go
+
+type converterContext struct {
+    listDepth    int      // ネストレベル
+    listStyle    string   // リスト種別 ("5"=箇条書き, "6"=番号付き, "7"=チェック)
+    listCounter  int      // 番号付きリストのカウンター
+    inCodeBlock  bool     // コードブロック内かどうか
+}
+
+func ConvertHTMLToMarkdown(htmlContent string) string {
+    // 1. HTMLをパース
+    // 2. ルートから再帰的にノードを走査
+    // 3. 各ノードに応じてMarkdown記法に変換
+}
+
+func convertNode(node *html.Node, ctx *converterContext) string {
+    // タグごとの変換処理
+    // 未知のタグでも子ノードを再帰処理してテキストを抽出
+}
+```
+
+#### 未知要素の処理
+
+未知のHTML要素に遭遇した場合でも、子ノードを再帰的に処理することでテキスト部分は必ず出力する（ベストエフォート）。
+
+### フェーズ1: Canvas HTML to Markdown Converter の実装
+
+Converterを独立したモジュールとして実装し、単体テストで品質を担保する。
+
+#### Commit 1: Add basic element conversion (headings, paragraphs, text formatting, links)
+- `canvas_converter.go` を新規作成
+- `golang.org/x/net/html` パッケージを依存に追加
+- `ConvertHTMLToMarkdown()` 関数と `convertNode()` 関数の基本構造を実装
+- 対応要素:
+  - 見出し: `<h1>`, `<h2>`, `<h3>` → `#`, `##`, `###`
+  - 段落: `<p>` → 空行区切りのテキスト
+  - 太字: `<b>` → `**text**`
+  - 斜体: `<i>` → `*text*`
+  - 下線: `<u>` → `<u>text</u>`（HTMLタグ維持）
+  - 取り消し線: `<del>` → `~~text~~`
+  - リンク: `<a href="...">` → `[text](url)`
+- 未知要素のフォールバック処理（子ノードのテキストを抽出）
+- `canvas_converter_test.go` にテストを追加
+
+#### Commit 2: Add list conversion (bullet, numbered, checklist with nesting)
+- 対応要素:
+  - 箇条書きリスト: `data-section-style='5'` → `- `
+  - 番号付きリスト: `data-section-style='6'` → `1. `
+  - チェックリスト: `data-section-style='7'` → `- [ ]` / `- [x]`
+  - ネストしたリスト: インデントで表現
+- `converterContext` でネストレベルとリスト種別を追跡
+- テストを追加
+
+#### Commit 3: Add block element conversion (table, blockquote, code block, embedded file)
+- 対応要素:
+  - テーブル: `<table>` → Markdownテーブル
+  - 引用: `<blockquote>` → `> `
+  - コードブロック: `<pre>` → ` ``` `
+  - 添付ファイル: `<p class='embedded-file'>` → `![File](url)`
+- テストを追加
+
+### フェーズ2: GetCanvasContent への統合
+
+既存のAPIに変換機能を組み込む。
+
+#### Commit 4: Integrate Markdown conversion into GetCanvasContent
+- `handler_get_canvas_content.go` の `getCanvasContent()` を修正
+- `buf.String()` の結果を `ConvertHTMLToMarkdown()` に渡す
+- `handler_get_canvas_content_test.go` のテストを更新（HTMLではなくMarkdownが返ることを確認）
+
+### フェーズ3: ドキュメント更新
+
+READMEを更新してユーザーに変更を周知する。
+
+#### Commit 5: Update get_canvas_content documentation
+- `README_ja.md` を更新
+  - `get_canvas_content` の説明を「HTMLコンテンツを取得」から「Markdownコンテンツを取得」に変更
+  - 変換される要素の説明を追加
+- `README.md` を更新（英語版）
 
 ## 参考資料
 
