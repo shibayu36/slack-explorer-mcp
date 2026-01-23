@@ -98,7 +98,7 @@ func (h *Handler) getCanvasContent(client SlackClient, canvasID string) CanvasCo
 	return CanvasContent{
 		ID:        canvasID,
 		Title:     fileInfo.Title,
-		Content:   buf.String(),
+		Content:   ConvertHTMLToMarkdown(buf.String()),
 		Permalink: fileInfo.Permalink,
 	}
 }

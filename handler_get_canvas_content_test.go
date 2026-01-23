@@ -69,13 +69,13 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		canvas1 := canvases[0].(map[string]interface{})
 		assert.Equal(t, "F1234567", canvas1["id"])
 		assert.Equal(t, "Canvas 1", canvas1["title"])
-		assert.Equal(t, "<html>Content 1</html>", canvas1["content"])
+		assert.Equal(t, "Content 1", canvas1["content"]) // HTML converted to Markdown (text extracted)
 		assert.Equal(t, "https://workspace.slack.com/files/U123/F1234567/canvas_1", canvas1["permalink"])
 
 		canvas2 := canvases[1].(map[string]interface{})
 		assert.Equal(t, "F2345678", canvas2["id"])
 		assert.Equal(t, "Canvas 2", canvas2["title"])
-		assert.Equal(t, "<html>Content 2</html>", canvas2["content"])
+		assert.Equal(t, "Content 2", canvas2["content"]) // HTML converted to Markdown (text extracted)
 		assert.Equal(t, "https://workspace.slack.com/files/U123/F2345678/canvas_2", canvas2["permalink"])
 
 		mockClient.AssertExpectations(t)
@@ -203,7 +203,7 @@ func TestHandler_GetCanvasContent(t *testing.T) {
 		canvas1 := canvases[0].(map[string]interface{})
 		assert.Equal(t, "F1234567", canvas1["id"])
 		assert.Equal(t, "Success Canvas", canvas1["title"])
-		assert.Equal(t, "<html>Success</html>", canvas1["content"])
+		assert.Equal(t, "Success", canvas1["content"]) // HTML converted to Markdown (text extracted)
 		assert.Equal(t, "https://workspace.slack.com/files/U123/F1234567/success_canvas", canvas1["permalink"])
 		assert.Nil(t, canvas1["error"])
 
