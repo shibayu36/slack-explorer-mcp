@@ -60,13 +60,39 @@ func (s *CanvasHTMLStripper) Strip(htmlStr string) (string, error) {
 	return buf.String(), nil
 }
 
-// processNode recursively processes all nodes in the tree, filtering attributes
+// processNode recursively processes all nodes in the tree, filtering attributes and transforming elements
 func (s *CanvasHTMLStripper) processNode(n *html.Node) {
 	if n.Type == html.ElementNode {
 		n.Attr = s.filterAttributes(n.Attr)
 	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		s.processNode(c)
+
+	// Save next sibling before processing, as node may be removed during iteration
+	for c := n.FirstChild; c != nil; {
+		next := c.NextSibling
+		s.transformChild(n, c)
+		c = next
+	}
+}
+
+// transformChild handles the transformation of a child element from parent's perspective
+func (s *CanvasHTMLStripper) transformChild(parent, child *html.Node) {
+	if child.Type == html.ElementNode {
+		switch child.Data {
+		case "br":
+			parent.RemoveChild(child)
+		case "span":
+			s.unwrapElement(parent, child)
+		case "control":
+			if s.isSlackEmoji(child) {
+				s.convertSlackEmoji(parent, child)
+			} else {
+				s.processNode(child)
+			}
+		default:
+			s.processNode(child)
+		}
+	} else {
+		s.processNode(child)
 	}
 }
 
@@ -102,6 +128,59 @@ func (s *CanvasHTMLStripper) filterClassValue(classVal string) string {
 	}
 
 	return strings.Join(preserved, " ")
+}
+
+// unwrapElement moves all children of target to its parent, then removes target
+func (s *CanvasHTMLStripper) unwrapElement(parent, target *html.Node) {
+	// Move all children of target to before target, then transform them
+	for child := target.FirstChild; child != nil; {
+		nextChild := child.NextSibling
+		target.RemoveChild(child)
+		parent.InsertBefore(child, target)
+		s.transformChild(parent, child)
+		child = nextChild
+	}
+	// Remove the now-empty target element
+	parent.RemoveChild(target)
+}
+
+// isSlackEmoji checks if the control element contains a Slack emoji img tag
+func (s *CanvasHTMLStripper) isSlackEmoji(n *html.Node) bool {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode && c.Data == "img" {
+			for _, attr := range c.Attr {
+				if attr.Key == "data-is-slack" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// convertSlackEmoji converts a Slack emoji control element to plain text
+func (s *CanvasHTMLStripper) convertSlackEmoji(parent, control *html.Node) {
+	var emojiText string
+	// The emoji text is a sibling of img inside control, not a child of img
+	// HTML parser treats <img> as a void element, so :emoji: becomes a text node sibling
+	for c := control.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.TextNode {
+			text := strings.TrimSpace(c.Data)
+			if text != "" {
+				emojiText = text
+				break
+			}
+		}
+	}
+
+	if emojiText != "" {
+		textNode := &html.Node{
+			Type: html.TextNode,
+			Data: emojiText,
+		}
+		parent.InsertBefore(textNode, control)
+	}
+	parent.RemoveChild(control)
 }
 
 // findBody finds the body element in the parsed HTML tree
