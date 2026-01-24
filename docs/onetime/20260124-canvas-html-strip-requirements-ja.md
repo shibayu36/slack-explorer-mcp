@@ -262,16 +262,22 @@ func (h *Handler) getCanvasContent(...) CanvasContent {
 - `href`, `data-section-style`の保持
 - `canvas_html_stripper_test.go` でユニットテスト
 
-#### Commit 3: Add element transformation to CanvasHTMLStripper
+#### Commit 3: Implement element transformation for CanvasHTMLStripper
 - br要素の除去
 - span要素の全除去（中身は保持）
 - Slack絵文字（`<control><img>`）の`:emoji:`変換
 - 対応するユニットテスト追加
+- 複合的なHTMLを入力として、全機能が正しく動作することを確認する統合テスト（`TestCanvasHTMLStripper_Strip_ComplexCanvasHTML`）
+  - ネストしたリスト、テーブル内装飾、blockquote、pre、embedded-fileなどを含む
 
-#### Commit 4: Add integration test for CanvasHTMLStripper
-- 複合的なHTMLを入力として、全機能が正しく動作することを確認する統合テスト
-- 実際のCanvas HTMLに近い構造でテスト
+##### 実装上の注意点
+- **ノード削除時のループ**: `for c := n.FirstChild; c != nil; c = c.NextSibling` でループ中にノードを削除すると`NextSibling`が壊れる。削除前に次のノードを保存しておく必要がある
+  ```go
+  for c := n.FirstChild; c != nil; {
+      next := c.NextSibling  // 先に次のノードを保存
+      // ノード削除処理
+      c = next
+  }
+  ```
+- **spanの中身移動**: spanの子要素を親に移動してからspan自体を削除する。順序としては (1) spanの子を全てspanの前に挿入 (2) spanを削除
 
-#### Commit 5: Update documentation for get_canvas_content HTML stripping
-- README_ja.md の更新（HTML strip機能の説明追加）
-- README.md の更新（英語版）
