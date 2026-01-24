@@ -195,3 +195,79 @@ Feature: Canvas HTML Strip機能
 <h1>参考リンク集</h1>
 <div data-section-style="5"><ul><li>:link: <a href="https://example.com/docs">ドキュメント</a></li></ul></div>
 ```
+
+## 実装計画
+
+### 設計方針
+
+#### 構成
+
+```go
+// canvas_html_stripper.go
+
+type CanvasHTMLStripper struct {
+    // 将来的に設定を持たせる可能性あり
+}
+
+func NewCanvasHTMLStripper() *CanvasHTMLStripper {
+    return &CanvasHTMLStripper{}
+}
+
+func (s *CanvasHTMLStripper) Strip(html string) (string, error) {
+    // HTML strip処理
+}
+```
+
+#### 呼び出し側
+
+```go
+// handler_get_canvas_content.go
+
+func (h *Handler) getCanvasContent(...) CanvasContent {
+    // ...既存の処理...
+
+    // Content取得後にstrip
+    stripper := NewCanvasHTMLStripper()
+    strippedContent, err := stripper.Strip(content)
+    if err != nil {
+        // エラー処理
+    }
+
+    return CanvasContent{
+        Content: strippedContent,
+        // ...
+    }
+}
+```
+
+#### 使用ライブラリ
+
+- `golang.org/x/net/html`: Go標準のHTMLパーサー
+
+### フェーズ1: Canvas HTML Strip機能の実装（1 PR）
+
+#### Commit 1: Add CanvasHTMLStripper skeleton and integrate with handler
+- `golang.org/x/net/html` 依存追加
+- `canvas_html_stripper.go` 新規作成
+  - `CanvasHTMLStripper` struct定義
+  - `NewCanvasHTMLStripper()` コンストラクタ
+  - `Strip()` メソッド（空実装：入力をそのまま返す）
+- `handler_get_canvas_content.go` への統合
+  - `getCanvasContent()` 内でStripperを呼び出す
+- この時点でエンドツーエンドで動作確認可能
+
+#### Commit 2: Add attribute stripping to CanvasHTMLStripper
+- id, style属性の除去
+- class属性の条件付き除去（`checked`は保持）
+- `href`, `data-section-style`の保持
+- `canvas_html_stripper_test.go` でユニットテスト
+
+#### Commit 3: Add element transformation to CanvasHTMLStripper
+- br要素の除去
+- li内単一span展開
+- Slack絵文字（`<control><img>`）の`:emoji:`変換
+- 対応するユニットテスト追加
+
+#### Commit 4: Update documentation for get_canvas_content HTML stripping
+- README_ja.md の更新（HTML strip機能の説明追加）
+- README.md の更新（英語版）
