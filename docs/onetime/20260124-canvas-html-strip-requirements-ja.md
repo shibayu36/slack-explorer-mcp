@@ -268,6 +268,10 @@ func (h *Handler) getCanvasContent(...) CanvasContent {
 - Slack絵文字（`<control><img>`）の`:emoji:`変換
 - 対応するユニットテスト追加
 
-#### Commit 4: Update documentation for get_canvas_content HTML stripping
+#### Commit 4: Add integration test for CanvasHTMLStripper
+- 複合的なHTMLを入力として、全機能が正しく動作することを確認する統合テスト
+- 実際のCanvas HTMLに近い構造でテスト
+
+#### Commit 5: Update documentation for get_canvas_content HTML stripping
 - README_ja.md の更新（HTML strip機能の説明追加）
 - README.md の更新（英語版）
