@@ -95,10 +95,20 @@ func (h *Handler) getCanvasContent(client SlackClient, canvasID string) CanvasCo
 		}
 	}
 
+	// Strip unnecessary HTML attributes and elements
+	stripper := NewCanvasHTMLStripper()
+	strippedContent, err := stripper.Strip(buf.String())
+	if err != nil {
+		return CanvasContent{
+			ID:    canvasID,
+			Error: fmt.Sprintf("failed to strip HTML: %v", err),
+		}
+	}
+
 	return CanvasContent{
 		ID:        canvasID,
 		Title:     fileInfo.Title,
-		Content:   buf.String(),
+		Content:   strippedContent,
 		Permalink: fileInfo.Permalink,
 	}
 }
