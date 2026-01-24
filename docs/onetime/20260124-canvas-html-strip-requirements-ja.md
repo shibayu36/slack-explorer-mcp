@@ -247,7 +247,6 @@ func (h *Handler) getCanvasContent(...) CanvasContent {
 ### フェーズ1: Canvas HTML Strip機能の実装（1 PR）
 
 #### Commit 1: Add CanvasHTMLStripper skeleton and integrate with handler
-- `golang.org/x/net/html` 依存追加
 - `canvas_html_stripper.go` 新規作成
   - `CanvasHTMLStripper` struct定義
   - `NewCanvasHTMLStripper()` コンストラクタ
@@ -257,6 +256,7 @@ func (h *Handler) getCanvasContent(...) CanvasContent {
 - この時点でエンドツーエンドで動作確認可能
 
 #### Commit 2: Add attribute stripping to CanvasHTMLStripper
+- `golang.org/x/net/html` 依存追加
 - id, style属性の除去
 - class属性の条件付き除去（`checked`は保持）
 - `href`, `data-section-style`の保持
