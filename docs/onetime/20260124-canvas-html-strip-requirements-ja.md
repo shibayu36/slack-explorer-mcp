@@ -8,7 +8,7 @@
 例えば、シンプルなリンク集のCanvasでも、以下のような冗長なHTML構造になっている：
 - すべての要素に`id='temp:C:XXX...'`のような一時ID
 - 空の`style=""`属性
-- `<li>`内の単一`<span>`ラッパー
+- 装飾用の`<span>`要素
 - 意味のない`<br/>`要素
 - 絵文字表示用の`<control>`と`<img>`タグ
 
@@ -24,7 +24,7 @@
 
 2. **不要な要素の除去・変換**
    - `<br/>`要素の除去
-   - `<li>`内の単一`<span>`ラッパーの除去（中身のテキストは保持）
+   - すべての`<span>`要素の除去（中身のテキスト・子要素は保持）
    - Slack絵文字の`<control>`と`<img>`タグを`:emoji_name:`形式のテキストに変換
 
 3. **保持する要素**
@@ -89,7 +89,7 @@ Feature: Canvas HTML Strip機能
     When get_canvas_contentでCanvasを取得する
     Then ":miro:"というテキストに変換されている
 
-  Scenario: br要素とli内の単一spanラッパーが除去される
+  Scenario: br要素とspan要素が除去される
     Given Canvasに以下のHTMLが含まれている
       """
       <ul id='temp:C:AAA'>
@@ -100,7 +100,7 @@ Feature: Canvas HTML Strip機能
       </ul>
       """
     When get_canvas_contentでCanvasを取得する
-    Then br要素とspanラッパーが除去され、テキストのみ保持される
+    Then br要素とspan要素が除去され、テキストのみ保持される
       """
       <ul>
         <li>リスト項目1</li>
@@ -264,7 +264,7 @@ func (h *Handler) getCanvasContent(...) CanvasContent {
 
 #### Commit 3: Add element transformation to CanvasHTMLStripper
 - br要素の除去
-- li内単一span展開
+- span要素の全除去（中身は保持）
 - Slack絵文字（`<control><img>`）の`:emoji:`変換
 - 対応するユニットテスト追加
 
