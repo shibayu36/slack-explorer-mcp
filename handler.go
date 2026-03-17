@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/slack-go/slack"
 )
 
 // Error messages for user-facing errors
@@ -22,6 +24,24 @@ type SearchPagination struct {
 	PerPage    int `json:"per_page"`
 	First      int `json:"first"`
 	Last       int `json:"last"`
+}
+
+type AttachmentInfo struct {
+	Title   string `json:"title,omitempty"`
+	Text    string `json:"text,omitempty"`
+	FromURL string `json:"from_url,omitempty"`
+}
+
+func convertAttachments(attachments []slack.Attachment) []AttachmentInfo {
+	var result []AttachmentInfo
+	for _, a := range attachments {
+		result = append(result, AttachmentInfo{
+			Title:   a.Title,
+			Text:    a.Text,
+			FromURL: a.FromURL,
+		})
+	}
+	return result
 }
 
 // UserProfile represents a user profile result
