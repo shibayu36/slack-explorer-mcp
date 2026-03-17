@@ -19,12 +19,13 @@ type GetThreadRepliesResponse struct {
 }
 
 type ThreadMessage struct {
-	User       string     `json:"user"`
-	Text       string     `json:"text"`
-	Timestamp  string     `json:"ts"`
-	ReplyCount int        `json:"reply_count,omitempty"`
-	ReplyUsers []string   `json:"reply_users,omitempty"`
-	Reactions  []Reaction `json:"reactions,omitempty"`
+	User        string           `json:"user"`
+	Text        string           `json:"text"`
+	Attachments []AttachmentInfo `json:"attachments,omitempty"`
+	Timestamp   string           `json:"ts"`
+	ReplyCount  int              `json:"reply_count,omitempty"`
+	ReplyUsers  []string         `json:"reply_users,omitempty"`
+	Reactions   []Reaction       `json:"reactions,omitempty"`
 }
 
 type Reaction struct {
@@ -139,6 +140,10 @@ func (h *Handler) convertToThreadResponse(messages []slack.Message, hasMore bool
 				})
 			}
 			threadMsg.Reactions = reactions
+		}
+
+		if len(msg.Attachments) > 0 {
+			threadMsg.Attachments = convertAttachments(msg.Attachments)
 		}
 
 		response.Messages = append(response.Messages, threadMsg)
