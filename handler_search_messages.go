@@ -24,10 +24,11 @@ type SearchMessagesMatches struct {
 }
 
 type SearchMessage struct {
-	User      string       `json:"user"`
-	Text      string       `json:"text"`
-	Timestamp string       `json:"ts"`
-	Channel   *ChannelInfo `json:"channel,omitempty"`
+	User        string           `json:"user"`
+	Text        string           `json:"text"`
+	Attachments []AttachmentInfo `json:"attachments,omitempty"`
+	Timestamp   string           `json:"ts"`
+	Channel     *ChannelInfo     `json:"channel,omitempty"`
 	// Fill if the message is in a thread
 	ThreadTs string `json:"thread_ts,omitempty"`
 }
@@ -235,6 +236,10 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 			Text:      match.Text,
 			Timestamp: match.Timestamp,
 			ThreadTs:  h.extractThreadTsFromPermalink(match.Permalink),
+		}
+
+		if len(match.Attachments) > 0 {
+			msg.Attachments = convertAttachments(match.Attachments)
 		}
 
 		if match.Channel.ID != "" {

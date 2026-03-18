@@ -29,6 +29,13 @@ func TestHandler_GetThreadReplies(t *testing.T) {
 					User:      "U2345678",
 					Text:      "Reply message 1",
 					Timestamp: "1234567891.123456",
+					Attachments: []slack.Attachment{
+						{
+							Title:       "YouTube Video",
+							FromURL:     "https://www.youtube.com/watch?v=abc123",
+							ServiceName: "YouTube",
+						},
+					},
 				},
 			},
 			{
@@ -95,11 +102,19 @@ func TestHandler_GetThreadReplies(t *testing.T) {
 		assert.Equal(t, "1234567890.123456", firstMsg["ts"])
 		assert.Equal(t, float64(2), firstMsg["reply_count"])
 		assert.Equal(t, []interface{}{"U2345678", "U3456789"}, firstMsg["reply_users"])
+		assert.Nil(t, firstMsg["attachments"])
 
 		secondMsg := messages_response[1].(map[string]interface{})
 		assert.Equal(t, "U2345678", secondMsg["user"])
 		assert.Equal(t, "Reply message 1", secondMsg["text"])
 		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
+
+		secondAttachments := secondMsg["attachments"].([]interface{})
+		assert.Len(t, secondAttachments, 1)
+		secondAtt := secondAttachments[0].(map[string]interface{})
+		assert.Equal(t, "YouTube Video", secondAtt["title"])
+		assert.Equal(t, "https://www.youtube.com/watch?v=abc123", secondAtt["from_url"])
+		assert.NotContains(t, secondAtt, "service_name")
 
 		thirdMsg := messages_response[2].(map[string]interface{})
 		assert.Equal(t, "U3456789", thirdMsg["user"])
@@ -111,6 +126,7 @@ func TestHandler_GetThreadReplies(t *testing.T) {
 		reaction := reactions[0].(map[string]interface{})
 		assert.Equal(t, "thumbsup", reaction["name"])
 		assert.Equal(t, float64(2), reaction["count"])
+		assert.Nil(t, thirdMsg["attachments"])
 
 		assert.Equal(t, false, response["has_more"])
 		assert.NotContains(t, response, "next_cursor")

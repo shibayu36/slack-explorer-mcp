@@ -27,6 +27,15 @@ func TestHandler_SearchMessages(t *testing.T) {
 						ID:   "C1234567",
 						Name: "general",
 					},
+					Attachments: []slack.Attachment{
+						{
+							Title:       "Example Article Title",
+							Text:        "This is a summary of the article",
+							FromURL:     "https://example.com/article/123",
+							ServiceName: "Example Service",
+							Color:       "ff0000",
+						},
+					},
 				},
 				{
 					Type:      "message",
@@ -111,11 +120,21 @@ func TestHandler_SearchMessages(t *testing.T) {
 		assert.Equal(t, "C1234567", channel1["id"])
 		assert.Equal(t, "general", channel1["name"])
 
+		attachments := firstMsg["attachments"].([]interface{})
+		assert.Len(t, attachments, 1)
+		att := attachments[0].(map[string]interface{})
+		assert.Equal(t, "Example Article Title", att["title"])
+		assert.Equal(t, "This is a summary of the article", att["text"])
+		assert.Equal(t, "https://example.com/article/123", att["from_url"])
+		assert.NotContains(t, att, "service_name")
+		assert.NotContains(t, att, "color")
+
 		secondMsg := matches[1].(map[string]interface{})
 		assert.Equal(t, "U2345678", secondMsg["user"])
 		assert.Equal(t, "Another test message", secondMsg["text"])
 		assert.Equal(t, "1234567891.123456", secondMsg["ts"])
 		assert.Equal(t, "1234567890.123456", secondMsg["thread_ts"])
+		assert.Nil(t, secondMsg["attachments"])
 
 		assert.Contains(t, messages, "pagination")
 		pagination := messages["pagination"].(map[string]interface{})
