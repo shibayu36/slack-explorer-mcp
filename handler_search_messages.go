@@ -232,11 +232,14 @@ func (h *Handler) convertToSearchResponse(result *slack.SearchMessages) *SearchM
 
 	for _, match := range result.Matches {
 		msg := SearchMessage{
-			User:        match.User,
-			Text:        match.Text,
-			Timestamp:   match.Timestamp,
-			ThreadTs:    h.extractThreadTsFromPermalink(match.Permalink),
-			Attachments: convertAttachments(match.Attachments),
+			User:      match.User,
+			Text:      match.Text,
+			Timestamp: match.Timestamp,
+			ThreadTs:  h.extractThreadTsFromPermalink(match.Permalink),
+		}
+
+		if len(match.Attachments) > 0 {
+			msg.Attachments = convertAttachments(match.Attachments)
 		}
 
 		if match.Channel.ID != "" {
