@@ -43,6 +43,43 @@ func TestConvertAttachments(t *testing.T) {
 		assert.Equal(t, AttachmentInfo{}, result[0])
 	})
 
+	t.Run("extracts fields title and value", func(t *testing.T) {
+		attachments := []slack.Attachment{
+			{
+				Fields: []slack.AttachmentField{
+					{Title: "", Value: "This is a tweet body via bot", Short: false},
+				},
+				Color:    "DDDDDD",
+				Fallback: "<https://example.com/status/123>",
+			},
+		}
+
+		result := convertAttachments(attachments)
+
+		assert.Len(t, result, 1)
+		assert.Len(t, result[0].Fields, 1)
+		assert.Equal(t, "", result[0].Fields[0].Title)
+		assert.Equal(t, "This is a tweet body via bot", result[0].Fields[0].Value)
+	})
+
+	t.Run("skips fields where both title and value are empty", func(t *testing.T) {
+		attachments := []slack.Attachment{
+			{
+				Fields: []slack.AttachmentField{
+					{Title: "Info", Value: "Some value", Short: false},
+					{Title: "", Value: "", Short: false},
+				},
+			},
+		}
+
+		result := convertAttachments(attachments)
+
+		assert.Len(t, result, 1)
+		assert.Len(t, result[0].Fields, 1)
+		assert.Equal(t, "Info", result[0].Fields[0].Title)
+		assert.Equal(t, "Some value", result[0].Fields[0].Value)
+	})
+
 	t.Run("handles multiple attachments preserving order and excluding extra fields", func(t *testing.T) {
 		attachments := []slack.Attachment{
 			{
