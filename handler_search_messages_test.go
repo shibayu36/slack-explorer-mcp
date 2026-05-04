@@ -265,19 +265,67 @@ func TestHandler_buildSearchParams(t *testing.T) {
 		}, params)
 	})
 
-	t.Run("query with modifiers should error", func(t *testing.T) {
+	t.Run("query with bare modifiers should error", func(t *testing.T) {
+		expectedErr := "query field cannot contain bare modifiers (from:, in:, etc.). Use the dedicated fields for inclusion, or prefix with '-' for exclusion (e.g., '-in:#channel')"
+		testCases := []struct {
+			name  string
+			query string
+		}{
+			{"bare modifier after whitespace", "hello from:someone"},
+			{"bare modifier at start", "from:U123"},
+			{"word-internal dash before modifier", "foo-in:#a"},
+			{"double dash before modifier", "--in:#a"},
+			{"exclusion mixed with bare modifier", "-in:#a from:U1"},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				request := buildSearchParamsRequest{
+					Query:   tc.query,
+					Sort:    "score",
+					SortDir: "desc",
+					Count:   20,
+					Page:    1,
+				}
+
+				_, _, err := handler.buildSearchParams(request)
+
+				assert.Error(t, err)
+				assert.Equal(t, expectedErr, err.Error())
+			})
+		}
+	})
+
+	t.Run("query with exclusion modifier should pass", func(t *testing.T) {
 		request := buildSearchParamsRequest{
-			Query:   "hello from:someone",
+			Query:   "-in:#general",
 			Sort:    "score",
 			SortDir: "desc",
 			Count:   20,
 			Page:    1,
 		}
 
-		_, _, err := handler.buildSearchParams(request)
+		query, _, err := handler.buildSearchParams(request)
 
-		assert.Error(t, err)
-		assert.Equal(t, "query field cannot contain modifiers (from:, in:, etc.). Please use the dedicated fields", err.Error())
+		assert.NoError(t, err)
+		assert.Equal(t, "-in:#general", query)
+	})
+
+	t.Run("query with exclusion combined with dedicated fields should pass", func(t *testing.T) {
+		request := buildSearchParamsRequest{
+			Query:     "error -in:#beta",
+			InChannel: "alpha",
+			FromUser:  "U1234567",
+			Sort:      "score",
+			SortDir:   "desc",
+			Count:     20,
+			Page:      1,
+		}
+
+		query, _, err := handler.buildSearchParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "error -in:#beta in:alpha from:<@U1234567>", query)
 	})
 
 	t.Run("invalid user ID format should error", func(t *testing.T) {

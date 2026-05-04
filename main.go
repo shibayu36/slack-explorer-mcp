@@ -39,7 +39,7 @@ Note: Response includes workspace_url, channel.id, and ts (timestamp) which can 
 - Regular message (no thread_ts field): {workspace_url}/archives/{channel.id}/p{ts without dot}
 - Thread reply (has thread_ts field): Same URL with ?thread_ts={thread_ts}&channel={channel.id}&message_ts={ts}`),
 			mcp.WithString("query",
-				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', etc. - use the dedicated fields instead."),
+				mcp.Description("Basic search query text. Do NOT include bare modifiers like 'from:', 'in:'; use the dedicated fields instead. Exclusion modifiers prefixed with '-' (e.g., '-in:#channel', '-from:<@U123>') ARE allowed in this field."),
 			),
 			mcp.WithString("in_channel",
 				mcp.Description("Search within a specific channel. Specify the channel name (e.g., 'general', 'random', 'チーム-dev')."),

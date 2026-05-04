@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
 - Message Search (`search_messages`)
   - Search Slack messages with advanced filtering options. You can search by channel, user, date range, and specific features (reactions, files, etc.).
   - Parameters
-    - `query`: Basic search query (without modifiers)
+    - `query`: Basic search query. Use dedicated fields for inclusion modifiers (bare modifiers in this field are rejected). Exclusion modifiers prefixed with `-` (e.g., `-in:#channel`) ARE allowed here
     - `in_channel`: Filter by channel name (e.g., "general", "team-dev")
     - `from_user`: Search messages from specific user (User ID)
     - `with`: Search DMs/threads with specific users (array of User IDs)
