@@ -180,7 +180,7 @@ Where channel_id and thread_ts are the values provided as input parameters`),
 		mcp.NewTool("search_files",
 			mcp.WithDescription(`Search for files with specific criteria/filters. Use this when: 1) You need to find files (canvases, PDFs, etc.) by keywords, 2) You need files from a specific user, 3) You need to filter by file type, 4) You want to filter by channel or date range.`),
 			mcp.WithString("query",
-				mcp.Description("Basic search query text only. Do NOT include modifiers like 'from:', 'in:', 'type:', etc. - use the dedicated fields instead."),
+				mcp.Description("Basic search query text. Do NOT include bare modifiers like 'from:', 'in:', 'type:'; use the dedicated fields instead. Exclusion modifiers prefixed with '-' (e.g., '-in:#channel', '-type:pdf') ARE allowed in this field."),
 			),
 			mcp.WithArray("types",
 				mcp.Items(

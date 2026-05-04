@@ -41,7 +41,7 @@ Slackのメッセージやスレッドなどの**情報の取得**に特化し�
 - ファイル検索 (`search_files`)
   - キャンバス、PDF、画像などのファイルを検索します。ファイルタイプ、チャンネル、ユーザー、日付範囲でフィルタリングが可能です。
   - パラメータ
-    - `query`: 基本検索クエリ（修飾子なし）
+    - `query`: 基本検索クエリ。無印の修飾子は専用フィールドへ（`query` への直書きはエラー）。除外指定（`-type:pdf` のような `-` プレフィックス付き）はこのフィールドに書けます
     - `types`: ファイルタイプで絞り込み（例: ["canvases", "pdfs"]）。利用可能なタイプ: lists, canvases, documents, emails, images, pdfs, presentations, snippets, spreadsheets, audio, videos
     - `in_channel`: チャンネル名での絞り込み（例: "general", "チーム-dev"）
     - `from_user`: 特定ユーザーのファイルを検索（ユーザーID）

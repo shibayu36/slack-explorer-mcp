@@ -82,10 +82,16 @@ func (h *Handler) SearchFiles(ctx context.Context, request mcp.CallToolRequest) 
 func (h *Handler) buildSearchFilesParams(request buildSearchFilesParamsRequest) (string, slack.SearchParameters, error) {
 	var queryParts []string
 
+	// Reject bare modifiers in query (e.g. "from:U1") and word-internal pseudo-exclusions
+	// (e.g. "foo-in:#a"). Only "-modifier:" at the start of the string or right after
+	// whitespace is treated as a real exclusion and allowed through to Slack.
+	//   (?:^|\s)(modifier):  -> bare modifier at start or after whitespace -> match (error)
+	//   \S-(modifier):       -> modifier following non-whitespace + "-"     -> match (error)
+	// (^ or \s) followed by "-modifier:" matches neither branch -> allowed.
 	if request.Query != "" {
-		modifierPattern := regexp.MustCompile(`\b(from|in|before|after|on|type):`)
+		modifierPattern := regexp.MustCompile(`(?:(?:^|\s)|\S-)(from|in|before|after|on|type):`)
 		if modifierPattern.MatchString(request.Query) {
-			return "", slack.SearchParameters{}, fmt.Errorf("query field cannot contain modifiers (from:, in:, type:, etc.). Please use the dedicated fields")
+			return "", slack.SearchParameters{}, fmt.Errorf("query field cannot contain bare modifiers (from:, in:, type:, etc.). Use the dedicated fields for inclusion, or prefix with '-' for exclusion (e.g., '-type:pdf')")
 		}
 		queryParts = append(queryParts, request.Query)
 	}
