@@ -58,17 +58,61 @@ func TestHandler_buildSearchFilesParams(t *testing.T) {
 		}, params)
 	})
 
-	t.Run("query with modifiers should error", func(t *testing.T) {
+	t.Run("query with bare modifiers should error", func(t *testing.T) {
+		expectedErr := "query field cannot contain bare modifiers (from:, in:, type:, etc.). Use the dedicated fields for inclusion, or prefix with '-' for exclusion (e.g., '-type:pdfs')"
+		testCases := []struct {
+			name  string
+			query string
+		}{
+			{"bare modifier after whitespace", "hello from:someone"},
+			{"bare modifier at start", "type:pdfs"},
+			{"word-internal dash before modifier", "foo-type:pdfs"},
+			{"double dash before modifier", "--type:pdfs"},
+			{"exclusion mixed with bare modifier", "-type:pdfs from:U1"},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				request := buildSearchFilesParamsRequest{
+					Query: tc.query,
+					Count: 20,
+					Page:  1,
+				}
+
+				_, _, err := handler.buildSearchFilesParams(request)
+
+				assert.Error(t, err)
+				assert.Equal(t, expectedErr, err.Error())
+			})
+		}
+	})
+
+	t.Run("query with exclusion modifier should pass", func(t *testing.T) {
 		request := buildSearchFilesParamsRequest{
-			Query: "hello from:someone",
+			Query: "-type:pdfs",
 			Count: 20,
 			Page:  1,
 		}
 
-		_, _, err := handler.buildSearchFilesParams(request)
+		query, _, err := handler.buildSearchFilesParams(request)
 
-		assert.Error(t, err)
-		assert.Equal(t, "query field cannot contain modifiers (from:, in:, type:, etc.). Please use the dedicated fields", err.Error())
+		assert.NoError(t, err)
+		assert.Equal(t, "-type:pdfs", query)
+	})
+
+	t.Run("query with exclusion combined with dedicated fields should pass", func(t *testing.T) {
+		request := buildSearchFilesParamsRequest{
+			Query:     "report -type:pdfs",
+			Types:     []string{"documents"},
+			InChannel: "alpha",
+			Count:     20,
+			Page:      1,
+		}
+
+		query, _, err := handler.buildSearchFilesParams(request)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "report -type:pdfs type:documents in:alpha", query)
 	})
 
 	t.Run("invalid user ID format should error", func(t *testing.T) {

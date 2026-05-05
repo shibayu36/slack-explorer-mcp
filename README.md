@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
 - Message Search (`search_messages`)
   - Search Slack messages with advanced filtering options. You can search by channel, user, date range, and specific features (reactions, files, etc.).
   - Parameters
-    - `query`: Basic search query (without modifiers)
+    - `query`: Basic search query. Use dedicated fields for inclusion modifiers (bare modifiers in this field are rejected). Exclusion modifiers prefixed with `-` (e.g., `-in:#channel`) ARE allowed here
     - `in_channel`: Filter by channel name (e.g., "general", "team-dev")
     - `from_user`: Search messages from specific user (User ID)
     - `with`: Search DMs/threads with specific users (array of User IDs)
@@ -41,7 +41,7 @@ A Model Context Protocol (MCP) server specialized in **retrieving information** 
 - File Search (`search_files`)
   - Search for files such as canvases, PDFs, and images. You can filter by file type, channel, user, and date range.
   - Parameters
-    - `query`: Basic search query (without modifiers)
+    - `query`: Basic search query. Use dedicated fields for inclusion modifiers (bare modifiers in this field are rejected). Exclusion modifiers prefixed with `-` (e.g., `-type:pdfs`) ARE allowed here
     - `types`: Filter by file types (e.g., ["canvases", "pdfs"]). Available types: lists, canvases, documents, emails, images, pdfs, presentations, snippets, spreadsheets, audio, videos
     - `in_channel`: Filter by channel name (e.g., "general", "team-dev")
     - `from_user`: Search files from specific user (User ID)
