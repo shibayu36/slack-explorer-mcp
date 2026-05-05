@@ -115,5 +115,10 @@ func (r *UserRepository) FindByDisplayName(
 - Always update README_ja.md first when adding or updating documentation
 - Then update README.md with English translation using simple, clear English that non-native speakers can easily understand
 
+### Handling `docs/onetime/`
+- Documents under `docs/onetime/` (requirements, design memos, etc.) are point-in-time snapshots. They may be referenced for context, but often contain outdated or incorrect content.
+- Do not treat their content as ground truth. Always verify the current state against the actual code or `git log`.
+- For "current facts" such as implementation status, file layout, or API signatures, treat the source code as the primary reference, not `docs/onetime/`.
+
 ## Creating Pull Request
 Use `.github/pull_request_template.md` to create pull request.
