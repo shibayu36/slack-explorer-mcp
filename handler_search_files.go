@@ -91,7 +91,7 @@ func (h *Handler) buildSearchFilesParams(request buildSearchFilesParamsRequest) 
 	if request.Query != "" {
 		modifierPattern := regexp.MustCompile(`(?:(?:^|\s)|\S-)(from|in|before|after|on|type):`)
 		if modifierPattern.MatchString(request.Query) {
-			return "", slack.SearchParameters{}, fmt.Errorf("query field cannot contain bare modifiers (from:, in:, type:, etc.). Use the dedicated fields for inclusion, or prefix with '-' for exclusion (e.g., '-type:pdf')")
+			return "", slack.SearchParameters{}, fmt.Errorf("query field cannot contain bare modifiers (from:, in:, type:, etc.). Use the dedicated fields for inclusion, or prefix with '-' for exclusion (e.g., '-type:pdfs')")
 		}
 		queryParts = append(queryParts, request.Query)
 	}
