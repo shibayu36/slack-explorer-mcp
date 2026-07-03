@@ -1,12 +1,12 @@
 module github.com/shibayu36/slack-explorer-mcp
 
-go 1.24.1
+go 1.25.0
 
 require (
 	github.com/mark3labs/mcp-go v0.38.0
 	github.com/slack-go/slack v0.17.3
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/net v0.49.0
+	golang.org/x/net v0.55.0
 )
 
 require (
